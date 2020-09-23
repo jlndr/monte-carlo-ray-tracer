@@ -153,4 +153,3 @@ void Scene::drawRoom() {
 	//(10, 6, 5)
 	//(10, 6, -5)
 	room.push_back(Triangle{p6_up, p5_up, p5_down, Teal});
-}
