@@ -29,10 +29,12 @@ private:
 	const glm::vec3 bottomRight{-2.0f, 1.0f, -1.0f};
 
 	// camera positions
-	const glm::vec3 CameraPos = glm::vec3(-3.0f, 0.0f, 0.0f);
+	const glm::vec3 CameraPos1 = glm::vec3(-3.0f, 0.0f, 0.0f);
+	const glm::vec3 CameraPos2 = glm::vec3(-20.0f, 0.0f, 7.0f);
 	const glm::vec3 CameraTarget = glm::vec3(0.0f, 0.0f, 0.0f);
-	const glm::vec3 CameraDirection = glm::normalize(CameraPos - CameraTarget);
-
+	const glm::vec3 CameraDirection = glm::normalize(CameraPos1 - CameraTarget);
+	//Variable to switch between 2 eyepoints
+	const glm::vec3 CameraPos = CameraPos1;
 	std::vector<Pixel> pixels{WIDTH*HEIGHT};
 	
 };

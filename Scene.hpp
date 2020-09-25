@@ -21,9 +21,15 @@ Triangle Scene::checkIntersections(Ray &r) const{
 	// Loop through all triangles and check if we have a hit 
 	// For now when no object in the scene, intersection with only wall or floor or roof
 	Triangle t{};
+	glm::vec3 closestIntersection{1000.0f, 0.0f, 0.0f};
 	for(auto i : room) {
-		//TODO calculate the intersection with smallest distance
-		if(i.rayIntersection(r)) t = i;
+		glm::vec3 intersection{};
+		if(!i.rayIntersection(r, intersection)) continue;
+		if(glm::distance(r.getStartPoint(), intersection) < glm::distance(r.getStartPoint(), closestIntersection)) {
+			t = i;
+			closestIntersection = intersection;
+		}	
+		
 	}
 	return t;
 }
@@ -166,4 +172,33 @@ void Scene::drawRoom() {
 	//(10, 6, 5)
 	//(10, 6, -5)
 	room.push_back(Triangle{p6_up, p5_up, p5_down, Teal});
+
+	//Add object Tetrhedron
+	glm::vec3 tBotFront{6, 2, -4.5};
+	glm::vec3 tBotRight{9, 6, -4.5};
+	glm::vec3 tBotLeft{9, -2, -4.5};
+	glm::vec3 tTop{9, 2, 0};
+
+	// Bottom triangle
+	//(10, 2, -3)
+	//(11, 1, -3)
+	//(11, 3, -3)
+	room.push_back(Triangle{tBotFront, tBotLeft, tBotRight, Yellow});
+
+	//Left
+	//(10, 2, -3)
+	//(11, 2, -2)
+	//(11, 1, -3)
+	room.push_back(Triangle{tBotFront, tTop, tBotLeft, Red});
+	
+	//RIGHT
+	//(10, 2, -3)
+	//(11, 3, -3)
+	//(11, 2, -2)
+	room.push_back(Triangle{tBotFront, tBotRight, tTop, Green});
+	//BACK
+	//(11, 3, -3)
+	//(11, 1, -3)
+	//(11, 2, -2)s
+	room.push_back(Triangle{tBotRight, tBotLeft, tTop, Gray});
 }

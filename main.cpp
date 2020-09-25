@@ -7,15 +7,10 @@
 
 
 int main() {
-	// std::cout << "hej";
 	Scene s{};
 	s.drawRoom();
 	Camera c{};
 	c.render(s);
-	// c.createPixels();
-	// Scene s; 
-	//s.drawRoom();
-	// std::cout << "Camera";
 
 	return 0;
 }

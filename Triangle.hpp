@@ -27,19 +27,19 @@ public:
 	//referens eller kopia
   glm::vec3 &getNormal() {return normal;}
 	glm::vec3 getColor() {return color;}
-	bool rayIntersection(Ray& r);
-
+	bool rayIntersection(Ray& r, glm::vec3& intersection);
+	
 private:
 	std::array<glm::vec3, 3> positions;
 	glm::vec3 normal;
-	glm::vec3 color;
+	glm::vec3 color{0.0f, 0.0f, 0.0f};
 };
 
-bool Triangle::rayIntersection(Ray& r) {
+bool Triangle::rayIntersection(Ray& r, glm::vec3& intersection) {
 	/*
 	*	Möllet Trumbore intersection algorithm
 	*/
-	const double EPSILON = 0.001;
+	const double EPSILON = 0.00001;
 	//Ta fram edges på triangeln
 	glm::vec3 edge1 = positions[1] - positions[0];
 	glm::vec3 edge2 = positions[2] - positions[0];
@@ -54,7 +54,7 @@ bool Triangle::rayIntersection(Ray& r) {
 	double det = glm::dot(edge1, crossEdge2);
 	// if(det < 1 && det > -1) std::cout << "DET: " << det << "\n";
 	if (det > -EPSILON && det < EPSILON) {
-		std::cout << " Miss pga av det\n "; 
+		// std::cout << " Miss pga av det\n "; 
 		return false;
 	}
 
@@ -77,8 +77,8 @@ bool Triangle::rayIntersection(Ray& r) {
 	//done, kan ta reda på t om vi vill
 	double t = invDet * glm::dot(edge2, crossEdge1);
 	if (t > EPSILON) {
-		//TODO Räkna ut exakta träffpunkten där nästa ray ska studsa ifrån
-		// std::cout << "MTHR FKN HIT!\n";
+		// glm::
+		intersection = r.getStartPoint() + glm::vec3{rayDirection.x * t , rayDirection.y * t , rayDirection.z * t};
 		return true;
 	}
 	// std::cout << "Miss pga av i slutet, vetefan \n";
