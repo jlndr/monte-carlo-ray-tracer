@@ -1,7 +1,8 @@
+#pragma once
 #include "glm/vec3.hpp"
 #include "glm/glm.hpp"
 #include "Triangle.hpp"
-
+#include "Ray.hpp"
 #include <array>
 #include <vector>
 
@@ -11,19 +12,30 @@ class Scene {
 public:
 	Scene(){};
 	void drawRoom();
-	
+	Triangle checkIntersections (Ray &ray) const;
 private:
 	std::vector<Triangle> room;
 };
+
+Triangle Scene::checkIntersections(Ray &r) const{
+	// Loop through all triangles and check if we have a hit 
+	// For now when no object in the scene, intersection with only wall or floor or roof
+	Triangle t{};
+	for(auto i : room) {
+		//TODO calculate the intersection with smallest distance
+		if(i.rayIntersection(r)) t = i;
+	}
+	return t;
+}
 
 void Scene::drawRoom() {
 
 	//VERTEXES
 
 	//
-	//		p3-----p5
-	// p1				 p6
-	//		p2-----p4
+	//			p3-----p5
+	// 	p1-				 		-p6
+	//			p2-----p4
 	//
 	glm::vec3 p1_up{-3.0f, 0.0f, 5.0f}, p1_down{-3.0f, 0.0f, -5.0f};
 	glm::vec3 p2_up{0.0f, -6.0f, 5.0f}, p2_down{0.0f, -6.0f, -5.0f};
@@ -153,3 +165,4 @@ void Scene::drawRoom() {
 	//(10, 6, 5)
 	//(10, 6, -5)
 	room.push_back(Triangle{p6_up, p5_up, p5_down, Teal});
+}
