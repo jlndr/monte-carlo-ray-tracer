@@ -39,7 +39,7 @@ bool Triangle::rayIntersection(Ray& r) {
 	/*
 	*	Möllet Trumbore intersection algorithm
 	*/
-	const float EPSILON = 0.0000001;
+	const double EPSILON = 0.001;
 	//Ta fram edges på triangeln
 	glm::vec3 edge1 = positions[1] - positions[0];
 	glm::vec3 edge2 = positions[2] - positions[0];
@@ -52,7 +52,11 @@ bool Triangle::rayIntersection(Ray& r) {
 	glm::vec3 crossEdge2 = glm::cross(rayDirection, edge2);
 
 	double det = glm::dot(edge1, crossEdge2);
-	if (det > -EPSILON && det < EPSILON) return false;
+	// if(det < 1 && det > -1) std::cout << "DET: " << det << "\n";
+	if (det > -EPSILON && det < EPSILON) {
+		std::cout << " Miss pga av det\n "; 
+		return false;
+	}
 
 	//invertera determinant
 	//Ta fram vektor S från point1 till raystartpunkt
@@ -74,8 +78,9 @@ bool Triangle::rayIntersection(Ray& r) {
 	double t = invDet * glm::dot(edge2, crossEdge1);
 	if (t > EPSILON) {
 		//TODO Räkna ut exakta träffpunkten där nästa ray ska studsa ifrån
+		// std::cout << "MTHR FKN HIT!\n";
 		return true;
 	}
-	
+	// std::cout << "Miss pga av i slutet, vetefan \n";
 	return false;
 }

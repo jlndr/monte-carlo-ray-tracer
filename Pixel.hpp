@@ -22,6 +22,7 @@ public:
 	glm::vec3 getPosition() {return position;}
 	glm::vec3 getCenterPoint() {return centerPoint;}
 	void setColor(glm::vec3 c) { color = c;}
+	glm::vec3 getColor() {return color;}
 
 private:
 	const float sideLength = 0.0025;

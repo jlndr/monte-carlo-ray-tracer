@@ -52,27 +52,28 @@ void Scene::drawRoom() {
 	glm::vec3 Yellow{1.0f, 1.0f, 0.0f};
 	glm::vec3 Teal{0.0f, 0.5f, 0.5f};
 	glm::vec3 Purple{1.0f, 0.0f, 1.0f};
+	glm::vec3 Gray{0.7f, 0.7f, 0.7f};
 
 	//ROOF
 	//((-3, 0, 5))
 	//(0, 6 , 5)
 	//(0, -6, 5)
-	room.push_back(Triangle{p1_up, p3_up, p2_up, White});
+	room.push_back(Triangle{p1_up, p3_up, p2_up, Gray});
 
 	//(0, -6, 5)
 	//(0, 6, 5)
 	//(10, 6, 5)
-	room.push_back(Triangle{p2_up, p3_up, p5_up, White});	
+	room.push_back(Triangle{p2_up, p3_up, p5_up, Gray});	
 	
 	//(0, -6, 5)
 	//(10, 6, 5)
 	//(10, -6, 5)
-	room.push_back(Triangle{p2_up, p5_up, p4_up, White});
+	room.push_back(Triangle{p2_up, p5_up, p4_up, Gray});
 
 	//(10, 6, 5)
 	//(13, 0, 5)
 	//(10, -6, 5)		
-	room.push_back(Triangle{p5_up, p6_up, p4_up, White});
+	room.push_back(Triangle{p5_up, p6_up, p4_up, Gray});
 
 	//FLOOR
 	//((-3, 0, -5))
