@@ -57,7 +57,7 @@ void Camera::render(const Scene& s) {
 	for (int i = 0; i < HEIGHT; ++i) {
 		for (int j = 0; j < WIDTH; ++j) {
 			Ray r{CameraPos, glm::normalize(pixels[j + i * HEIGHT].getCenterPoint() - CameraPos)};
-			Triangle hit = s.checkIntersections(r);
+			Triangle hit = s.checkTriangleIntersections(r);
 			pixels[j + i * HEIGHT].setColor(hit.getColor());
 		}
 	}

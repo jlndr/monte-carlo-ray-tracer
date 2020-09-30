@@ -1,23 +1,33 @@
 #pragma once
-#include "glm/vec3.hpp"
-#include "glm/glm.hpp"
-#include "Triangle.hpp"
-#include "Ray.hpp"
+#include <iostream>
 #include <array>
 #include <vector>
 
-#include <iostream>
+#include "glm/vec3.hpp"
+#include "glm/glm.hpp"
+
+#include "Triangle.hpp"
+#include "Ray.hpp"
+#include "Sphere.hpp"
+
 class Scene {
 
 public:
 	Scene(){};
 	void drawRoom();
-	Triangle checkIntersections (Ray &ray) const;
+	Triangle checkTriangleIntersections (Ray &ray) const;
+	Sphere checkSphereIntersections(Ray &ray) const;
+	
+	void addSphere(Sphere _s) {
+		s = _s;
+	}
+
 private:
 	std::vector<Triangle> room;
+	Sphere s;
 };
 
-Triangle Scene::checkIntersections(Ray &r) const{
+Triangle Scene::checkTriangleIntersections(Ray &r) const{
 	// Loop through all triangles and check if we have a hit 
 	// For now when no object in the scene, intersection with only wall or floor or roof
 	Triangle t{};
@@ -32,6 +42,15 @@ Triangle Scene::checkIntersections(Ray &r) const{
 		
 	}
 	return t;
+}
+
+Sphere Scene::checkSphereIntersections(Ray &r) const {
+	Sphere _s{};
+	glm::vec3 closestIntersection{1000.0f, 0.0f, 0.0f};
+	glm::vec3 intersection{};
+	if(s.rayIntersection(r, intersection)) std::cout << "hjit \n";
+
+	return _s;
 }
 
 void Scene::drawRoom() {

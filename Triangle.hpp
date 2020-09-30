@@ -13,7 +13,6 @@ public:
 		positions[2] = p3;
 		color = _color;
 
-		//  normal = glm::normalize(glm::vec3(1,1,1));
 		normal = glm::normalize(glm::cross(p2-p1, p3-p2));
 	};
 
@@ -22,10 +21,10 @@ public:
 		normal = t.normal;
 		color = t.color;
 		return *this;
-	};
+	}
     
 	//referens eller kopia
-  glm::vec3 &getNormal() {return normal;}
+	glm::vec3 &getNormal() {return normal;}
 	glm::vec3 getColor() {return color;}
 	bool rayIntersection(Ray& r, glm::vec3& intersection);
 	
@@ -37,7 +36,7 @@ private:
 
 bool Triangle::rayIntersection(Ray& r, glm::vec3& intersection) {
 	/*
-	*	Möllet Trumbore intersection algorithm
+	*	Möller Trumbore intersection algorithm
 	*/
 	const double EPSILON = 0.00001;
 	//Ta fram edges på triangeln
@@ -47,7 +46,7 @@ bool Triangle::rayIntersection(Ray& r, glm::vec3& intersection) {
 	//DETERMINANTEN
 	//Kryssprodukten KP mellan edge1 och rayDirection
 	//determinanten = skalärprodukten mellan kryssprodukten och edge2
-	//OM determinant VÄLDIGT liten -> raydirection är parallel med/ligget i triangelplanet
+	//OM determinant VÄLDIGT liten -> raydirection är parallel med/ligger i triangelplanet
 	//return false
 	glm::vec3 crossEdge2 = glm::cross(rayDirection, edge2);
 
