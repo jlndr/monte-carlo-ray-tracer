@@ -26,7 +26,7 @@ public:
 	//referens eller kopia
 	glm::vec3 &getNormal() {return normal;}
 	glm::vec3 getColor() {return color;}
-	bool rayIntersection(Ray& r, glm::vec3& intersection);
+	bool rayIntersection(Ray& r, glm::vec3& intersection, glm::vec3& intersectionNormal);
 	
 private:
 	std::array<glm::vec3, 3> positions;
@@ -34,7 +34,7 @@ private:
 	glm::vec3 color{0.0f, 0.0f, 0.0f};
 };
 
-bool Triangle::rayIntersection(Ray& r, glm::vec3& intersection) {
+bool Triangle::rayIntersection(Ray& r, glm::vec3& intersection, glm::vec3& intersectionNormal) {
 	/*
 	*	Möller Trumbore intersection algorithm
 	*/
@@ -78,6 +78,7 @@ bool Triangle::rayIntersection(Ray& r, glm::vec3& intersection) {
 	if (t > EPSILON) {
 		// glm::
 		intersection = r.getStartPoint() + glm::vec3{rayDirection.x * t , rayDirection.y * t , rayDirection.z * t};
+		intersectionNormal = normal;
 		return true;
 	}
 	// std::cout << "Miss pga av i slutet, vetefan \n";

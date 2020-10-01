@@ -4,7 +4,7 @@
 class Ray {
 public:
 	Ray(){};
-	Ray(glm::vec3 s, glm::vec3 e): startPoint{s}, direction{e}{};
+	Ray(glm::vec3 s, glm::vec3 d): startPoint{s}, direction{glm::normalize(d)}{};
 	void setHitPoint(glm::vec3 hit);
 	glm::vec3 getHitPoint();
 	glm::vec3 getDirection(){return direction;}

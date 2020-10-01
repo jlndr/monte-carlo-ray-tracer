@@ -9,47 +9,63 @@
 #include "Triangle.hpp"
 #include "Ray.hpp"
 #include "Sphere.hpp"
+#include "Light.hpp"
 
 class Scene {
 
 public:
 	Scene(){};
 	void drawRoom();
-	Triangle checkTriangleIntersections (Ray &ray) const;
-	Sphere checkSphereIntersections(Ray &ray) const;
+	Triangle checkTriangleIntersections (Ray &ray, glm::vec3& closestTriangle, glm::vec3& intersectionNormal) const;
+	Sphere checkSphereIntersections(Ray &ray, glm::vec3& closestSphere, glm::vec3& intersectionNormal) const;
 	
 	void addSphere(Sphere _s) {
 		s = _s;
 	}
 
+	void addLight(Light _l) {
+		l = _l;
+		std::vector<Triangle> lightTriangles = _l.getLightTriangles();
+		
+		for(auto t : lightTriangles) {
+			room.push_back(t);
+		}
+	}
+	Light getLight() const{
+
+		return l;
+	}
 private:
 	std::vector<Triangle> room;
 	Sphere s;
+	Light l;
+	
 };
 
-Triangle Scene::checkTriangleIntersections(Ray &r) const{
-	// Loop through all triangles and check if we have a hit 
+Triangle Scene::checkTriangleIntersections(Ray &r, glm::vec3& closestTriangle, glm::vec3& intersectionNormal) const{
+	// Loop through all triangles and check if we have a hi 
 	// For now when no object in the scene, intersection with only wall or floor or roof
 	Triangle t{};
-	glm::vec3 closestIntersection{1000.0f, 0.0f, 0.0f};
 	for(auto i : room) {
 		glm::vec3 intersection{};
-		if(!i.rayIntersection(r, intersection)) continue;
-		if(glm::distance(r.getStartPoint(), intersection) < glm::distance(r.getStartPoint(), closestIntersection)) {
+		if(!i.rayIntersection(r, intersection, intersectionNormal)) continue;
+		if(glm::distance(r.getStartPoint(), intersection) < glm::distance(r.getStartPoint(), closestTriangle)) {
 			t = i;
-			closestIntersection = intersection;
+			closestTriangle = intersection;
 		}	
 		
 	}
 	return t;
 }
 
-Sphere Scene::checkSphereIntersections(Ray &r) const {
+Sphere Scene::checkSphereIntersections(Ray &r, glm::vec3& closestSphere, glm::vec3& intersectionNormal) const {
 	Sphere _s{};
-	glm::vec3 closestIntersection{1000.0f, 0.0f, 0.0f};
 	glm::vec3 intersection{};
-	if(s.rayIntersection(r, intersection)) std::cout << "hjit \n";
-
+	if(s.rayIntersection(r, intersection, intersectionNormal)) {
+		_s = s;
+		closestSphere = intersection;
+	}
+	
 	return _s;
 }
 
@@ -193,10 +209,10 @@ void Scene::drawRoom() {
 	room.push_back(Triangle{p6_up, p5_up, p5_down, Teal});
 
 	//Add object Tetrhedron
-	glm::vec3 tBotFront{6, 2, -4.5};
-	glm::vec3 tBotRight{9, 6, -4.5};
-	glm::vec3 tBotLeft{9, -2, -4.5};
-	glm::vec3 tTop{9, 2, 0};
+	glm::vec3 tBotFront{3, 2, -4.5};
+	glm::vec3 tBotRight{6, 6, -4.5};
+	glm::vec3 tBotLeft{6, -2, -4.5};
+	glm::vec3 tTop{6, 2, 0};
 
 	// Bottom triangle
 	//(10, 2, -3)
@@ -220,4 +236,7 @@ void Scene::drawRoom() {
 	//(11, 1, -3)
 	//(11, 2, -2)s
 	room.push_back(Triangle{tBotRight, tBotLeft, tTop, Gray});
+
+	addSphere(Sphere{glm::vec3{7.0f, -1.5f, 0.0f}, 1.0, Yellow});
+	addLight(Light{});
 }
