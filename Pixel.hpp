@@ -5,11 +5,11 @@
 
 class Pixel {
 public:
-	Pixel(): position{glm::vec3{}}, centerPoint{glm::vec3{}}{}
+	Pixel(): position{vec3{}}, centerPoint{vec3{}}{}
 
-	Pixel(glm::vec3 pos){
+	Pixel(vec3 pos){
 		position = pos;
-		centerPoint = glm::vec3{position.x, position.y + 0.0025/2, position.z - 0.0025/2};
+		centerPoint = vec3{position.x, position.y + 0.0025/2, position.z - 0.0025/2};
 	}
 
 	Pixel operator=(const Pixel &p) {
@@ -19,16 +19,16 @@ public:
 	};
 
 	float getSideLength() {return sideLength;}
-	glm::vec3 getPosition() {return position;}
-	glm::vec3 getCenterPoint() {return centerPoint;}
-	void setColor(glm::vec3 c) { color = c;}
-	glm::vec3 getColor() {return color;}
+	vec3 getPosition() {return position;}
+	vec3 getCenterPoint() {return centerPoint;}
+	void setColor(vec3 c) { color = c;}
+	vec3 getColor() {return color;}
 
 private:
 	const float sideLength = 0.0025;
-	glm::vec3 position;
-	glm::vec3 centerPoint;
-	glm::vec3 color;
+	vec3 position;
+	vec3 centerPoint;
+	vec3 color;
 
 };
 

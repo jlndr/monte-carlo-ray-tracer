@@ -23,21 +23,21 @@ public:
 	void render(const Scene& s);
 	void createImage();
 
-	bool castShadowray(const Scene&s , glm::vec3& intersection, glm::vec3& intersectionNormal);
+	bool castShadowray(const Scene&s , vec3& intersection, vec3& intersectionNormal);
 private:
 	// Camera plane
-	const glm::vec3 topLeft{0.0f, -1.0f, 1.0f};
-	const glm::vec3 topRight{-2.0f, 1.0f, 1.0f};
-	const glm::vec3 bottomLeft{-2.0f, -1.0f, -1.0f};
-	const glm::vec3 bottomRight{-2.0f, 1.0f, -1.0f};
+	const vec3 topLeft{0.0f, -1.0f, 1.0f};
+	const vec3 topRight{-2.0f, 1.0f, 1.0f};
+	const vec3 bottomLeft{-2.0f, -1.0f, -1.0f};
+	const vec3 bottomRight{-2.0f, 1.0f, -1.0f};
 
 	// camera positions
-	const glm::vec3 CameraPos1 = glm::vec3(-3.0f, 0.0f, 0.0f);
-	const glm::vec3 CameraPos2 = glm::vec3(-1.0f, 0.0f, 0.0f);
-	const glm::vec3 CameraTarget = glm::vec3(0.0f, 0.0f, 0.0f);
-	const glm::vec3 CameraDirection = glm::normalize(CameraPos1 - CameraTarget);
+	const vec3 CameraPos1 = vec3(-3.0f, 0.0f, 0.0f);
+	const vec3 CameraPos2 = vec3(-1.0f, 0.0f, 0.0f);
+	const vec3 CameraTarget = vec3(0.0f, 0.0f, 0.0f);
+	const vec3 CameraDirection = glm::normalize(CameraPos1 - CameraTarget);
 	//Variable to switch between 2 eyepoints
-	const glm::vec3 CameraPos = CameraPos2;
+	const vec3 CameraPos = CameraPos2;
 	std::vector<Pixel> pixels{WIDTH*HEIGHT};
 	
 };
@@ -46,7 +46,7 @@ void Camera::createPixels() {
 
 	for (int i = 0; i < HEIGHT; ++i) {
 		for (int j = 0; j < WIDTH; ++j) {
-			pixels[j + i * HEIGHT] = Pixel{topLeft + glm::vec3{0.0f, 0.0025 * j, -0.0025 * i}};
+			pixels[j + i * HEIGHT] = Pixel{topLeft + vec3{0.0f, 0.0025 * j, -0.0025 * i}};
 			// std::cout << pixels[j + i * HEIGHT].getPosition().y << " ";
 		}
 		// std::cout << "\n";
@@ -60,16 +60,16 @@ void Camera::render(const Scene& s) {
 	for (int i = 0; i < HEIGHT; ++i) {
 		for (int j = 0; j < WIDTH; ++j) {
 			Ray r{CameraPos, glm::normalize(pixels[j + i * HEIGHT].getCenterPoint() - CameraPos)};
-			glm::vec3 closestTriangle{1000.0, 0.0, 0.0};
-			glm::vec3 closestSphere{1000.0, 0.0, 0.0};
-			glm::vec3 intersectionNormal{};
+			vec3 closestTriangle{1000.0, 0.0, 0.0};
+			vec3 closestSphere{1000.0, 0.0, 0.0};
+			vec3 intersectionNormal{};
 			Triangle hit = s.checkTriangleIntersections(r, closestTriangle, intersectionNormal);
 			Sphere sp = s.checkSphereIntersections(r, closestSphere, intersectionNormal);
 
-			glm::vec3 intersection = closestSphere.x < closestTriangle.x ? closestSphere : closestTriangle;
+			vec3 intersection = closestSphere.x < closestTriangle.x ? closestSphere : closestTriangle;
 			// bool sphereHit = closestSphere.x < closestTriangle.x ? true : false;
 			
-			glm::vec3 color = closestSphere.x < closestTriangle.x ? sp.getColor() : hit.getColor();
+			vec3 color = closestSphere.x < closestTriangle.x ? sp.getMaterial().reflect() : hit.getMaterial().reflect();
 			//Shadowray
 			if(!castShadowray(s, intersection, intersectionNormal)) {
 				color.x /= 2;
@@ -83,32 +83,32 @@ void Camera::render(const Scene& s) {
 	createImage();
 }
 
-bool Camera::castShadowray(const Scene&s , glm::vec3& intersection, glm::vec3& intersectionNormal) {
+bool Camera::castShadowray(const Scene&s , vec3& intersection, vec3& intersectionNormal) {
 	Light l = s.getLight();
-	const float EPSILON = 0.00001;
+	// const float EPSILON = 0.0001;
+	if(intersection.z + EPSILON > l.getLightCenter().z) return false;
 
 	//SHADOW BIAS
-	glm::vec3 startPoint = intersection + EPSILON * intersectionNormal;
-	Ray r{startPoint, glm::normalize(l.getLightCenter() - startPoint)};
+	vec3 startPoint = intersection + EPSILON * intersectionNormal;
+	Ray r{intersection, glm::normalize(l.getLightCenter() - intersection)};
+	Ray rBias{startPoint, glm::normalize(l.getLightCenter() - startPoint)};
 
 	
-	glm::vec3 closestTriangle{1000.0f, 0.0f, 0.0f};
-	glm::vec3 closestSphere{1000.0f, 0.0f, 0.0f};
+	vec3 closestTriangle{1000.0f, 0.0f, 0.0f};
+	vec3 closestSphere{1000.0f, 0.0f, 0.0f};
 
 	Triangle hit = s.checkTriangleIntersections(r, closestTriangle, intersectionNormal);
-	Sphere sp = s.checkSphereIntersections(r, closestSphere, intersectionNormal);
+	Sphere sp = s.checkSphereIntersections(rBias, closestSphere, intersectionNormal);
 	
-		// if(glm::distance(closestSphere, intersection) < 2.0f) {
-		// 	// std::cout << "SPhere hit: " << glm::distance(closestSphere, intersection) << "\n";
-		// }
-	//TODO SE ÖVER IFSATSER
-	if(glm::distance(startPoint, closestSphere) > -EPSILON && glm::distance(startPoint, closestSphere) < EPSILON) return true;
+	double distToLight = glm::distance(l.getLightCenter(), intersection);
+	double distToTriangle = glm::distance(closestTriangle, intersection);
+	double distToSphere = glm::distance(closestSphere, startPoint);
+
+
+	if(distToTriangle + EPSILON < distToLight ) return false;
+	if(distToSphere + EPSILON < distToLight && glm::abs(distToSphere) > EPSILON) return false;
+	return true;
 	
-	if(glm::distance(startPoint, closestTriangle) > glm::distance(startPoint, closestSphere)) return false;
-	if(closestTriangle.z > 4.9 && closestTriangle.z < 4.99999) return true;
-	double diff = glm::distance(startPoint, closestTriangle) - glm::distance(l.getLightCenter(), startPoint);
-	if(diff > -EPSILON && diff < EPSILON) return true;
-	return false;
 }
 
 void Camera::createImage() {
@@ -121,7 +121,7 @@ void Camera::createImage() {
 	//Normera till 255
 	for (int i = 0; i < HEIGHT; ++i) {
 		for (int j = 0; j < WIDTH; ++j) {
-			glm::vec3 color = pixels[j + i * HEIGHT].getColor();
+			vec3 color = pixels[j + i * HEIGHT].getColor();
 
 			fputc((int) (color.x * norm), f);
 			fputc((int) (color.y * norm), f);
