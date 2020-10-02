@@ -91,7 +91,7 @@ void Scene::drawRoom() {
 	Material GreenLamb{ColorDbl{0.0f, 1.0f, 0.0f}, LAMBERTIAN};
 	Material BlueLamb{ColorDbl{0.0f, 0.0f, 1.0f}, LAMBERTIAN};
 	Material YellowLamb{ColorDbl{1.0f, 1.0f, 0.0f}, LAMBERTIAN};
-	Material TealLamb{ColorDbl{0.0f, 0.5f, 0.5f}, LAMBERTIAN};
+	Material TealLamb{ColorDbl{0.0f, 0.5f, 0.5f}, PERFECT_REFL};
 	Material PurpleLamb{ColorDbl{1.0f, 0.0f, 1.0f}, LAMBERTIAN};
 	Material GrayLamb{ColorDbl{0.7f, 0.7f, 0.7f}, LAMBERTIAN};
 

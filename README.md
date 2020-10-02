@@ -1,8 +1,9 @@
 # monte-carlo-ray-tracer
 
 1. Materials
-	1.1 Add materials to distinguish between objects and room etc
+	1.1 Add materials to distinguish between objects and room etc OK
 	1.2 Add the right properties to each material
+	1.3 bounceRay function
 
 
 2. Reflection
