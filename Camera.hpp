@@ -11,7 +11,7 @@
 // Image size
 const int WIDTH = 800;
 const int HEIGHT = 800;
-const int MAX_PASSES = 3;
+const int MAX_PASSES = 6;
 
 class Camera {
 public:
@@ -23,8 +23,8 @@ public:
 	void render(const Scene& s);
 	void createImage();
 	ColorDbl traceRay(const Scene& s, Ray& r, int pass);
-
-	bool castShadowray(const Scene&s , vec3& intersection, vec3& intersectionNormal);
+	
+	
 private:
 	// Camera plane
 	const vec3 topLeft{0.0f, -1.0f, 1.0f};
@@ -80,12 +80,15 @@ ColorDbl Camera::traceRay(const Scene& s, Ray& r, int pass) {
 	
 	color = closestSphere.x < closestTriangle.x ? sp.getMaterial().reflect() : hit.getMaterial().reflect();
 	
+	ColorDbl light = s.calcLight(intersection, intersectionNormal);
+
+	color *= light;
 	//Shadowray
-	if(!castShadowray(s, intersection, intersectionNormal)) {
-		color.x /= 2;
-		color.y /= 2;
-		color.z /= 2;
-	}
+	// if(!castShadowray(s, intersection, intersectionNormal)) {
+	// 	color.x /= 2;
+	// 	color.y /= 2;
+	// 	color.z /= 2;
+	// }
 	return color;
 }
 
@@ -113,34 +116,6 @@ void Camera::render(const Scene& s) {
 		}
 	}
 	createImage();
-}
-
-bool Camera::castShadowray(const Scene&s , vec3& intersection, vec3& intersectionNormal) {
-	Light l = s.getLight();
-	// const float EPSILON = 0.0001;
-	if(intersection.z + EPSILON > l.getLightCenter().z) return false;
-
-	//SHADOW BIAS
-	vec3 startPoint = intersection + EPSILON * intersectionNormal;
-	Ray r{intersection, glm::normalize(l.getLightCenter() - intersection)};
-	Ray rBias{startPoint, glm::normalize(l.getLightCenter() - startPoint)};
-
-	
-	vec3 closestTriangle{1000.0f, 0.0f, 0.0f};
-	vec3 closestSphere{1000.0f, 0.0f, 0.0f};
-
-	Triangle hit = s.checkTriangleIntersections(r, closestTriangle, intersectionNormal);
-	Sphere sp = s.checkSphereIntersections(rBias, closestSphere, intersectionNormal);
-	
-	double distToLight = glm::distance(l.getLightCenter(), intersection);
-	double distToTriangle = glm::distance(closestTriangle, intersection);
-	double distToSphere = glm::distance(closestSphere, startPoint);
-
-
-	if(distToTriangle + EPSILON < distToLight ) return false;
-	if(distToSphere + EPSILON < distToLight && glm::abs(distToSphere) > EPSILON) return false;
-	return true;
-	
 }
 
 void Camera::createImage() {

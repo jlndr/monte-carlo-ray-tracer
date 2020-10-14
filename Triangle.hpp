@@ -1,4 +1,6 @@
 #pragma once
+#include "utils.hpp"
+
 #include "glm/glm.hpp"
 #include "Ray.hpp"
 #include "Material.hpp"
@@ -13,7 +15,7 @@ public:
 		positions[1] = p2;
 		positions[2] = p3;
 		material = m;            //
-		normal = glm::normalize(glm::cross(p2-p1, p3-p2));
+		normal = glm::normalize(glm::cross(p3-p2, p2-p1));
 	};
 
 	Triangle operator=(const Triangle &t) {
@@ -27,12 +29,27 @@ public:
 	
 	vec3 &getNormal() {return normal;}
 	Material getMaterial() {return material;}
-	
+	double calcArea() const {
+		return 0.5 * glm::length(glm::cross(positions[1] - positions[0], positions[2] - positions[0]));
+	}
+	//TODO Make real random :)
+	vec3 getRandomPoint();
+
 private:
 	std::array<vec3, 3> positions;
 	vec3 normal;
 	Material material;
 };
+
+vec3 Triangle::getRandomPoint() {
+	double area = calcArea();
+	float u = randMinMax(0.0, 1.0 / area);
+	float v = randMinMax(0.0, 1.0 / area);
+
+	if(u + v > 1.0) return getRandomPoint();
+	vec3 pos = (1.0f - u - v) * positions[0] + u * positions[1] + v * positions[2];
+	return pos + 0.001f * vec3(0.0f, 0.0f, -1.0f);
+}
 
 bool Triangle::rayIntersection(Ray& r, vec3& intersection, vec3& intersectionNormal) {
 	/*

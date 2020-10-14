@@ -5,12 +5,14 @@
 
 #include "glm/vec3.hpp"
 #include "glm/glm.hpp"
-
+#include "typeDefinitions.hpp"
 #include "Triangle.hpp"
 #include "Ray.hpp"
 #include "Sphere.hpp"
 #include "Light.hpp"
 #include "Material.hpp"
+
+
 class Scene {
 
 public:
@@ -23,22 +25,22 @@ public:
 		s = _s;
 	}
 
-	void addLight(Light _l) {
-		l = _l;
-		std::vector<Triangle> lightTriangles = _l.getLightTriangles();
+	void addLight() {
+		
+		std::vector<Triangle> lightTriangles = l.getLightTriangles();
 		
 		for(auto t : lightTriangles) {
 			room.push_back(t);
 		}
 	}
-	Light getLight() const{
 
-		return l;
-	}
+	ColorDbl calcLight(vec3& intersection, vec3& intersectionNormal) const;
+	bool castShadowray(vec3& intersection, vec3& intersectionNormal, vec3& randLightPoint) const;
+	
 private:
 	std::vector<Triangle> room;
 	Sphere s;
-	Light l;
+	Light l{};
 	
 };
 
@@ -53,7 +55,6 @@ Triangle Scene::checkTriangleIntersections(Ray &r, vec3& closestTriangle, vec3& 
 			t = i;
 			closestTriangle = intersection;
 		}	
-		
 	}
 	return t;
 }
@@ -67,6 +68,63 @@ Sphere Scene::checkSphereIntersections(Ray &r, vec3& closestSphere, vec3& inters
 	}
 	
 	return _s;
+}
+
+ColorDbl Scene::calcLight(vec3& intersection, vec3& intersectionNormal) const {
+	ColorDbl color = ColorDbl{0.0, 0.0, 0.0};
+	double area = 0;
+	int counter = 0;
+	double angle = 0.0;
+	for(Triangle LT : l.getLightTriangles()) {
+		area += LT.calcArea();
+		for(int i = 0; i < 3; ++i){
+
+			// vec3 randLightPoint = LT.getRandomPoint();
+			vec3 randLightPoint = l.getLightCenter();
+			++counter;
+			
+			if(!castShadowray(intersection, intersectionNormal, randLightPoint)) {
+				// color.x /= 2;
+				// color.y /= 2;
+				// color.z /= 2;
+				continue;
+			}
+			angle = glm::dot(-glm::normalize(intersectionNormal), glm::normalize(randLightPoint - intersection)) ;
+			double beta = glm::clamp((double) glm::dot(LT.getNormal(), -glm::normalize(randLightPoint - intersection)), 0.0, 1.0);
+			// glm::pow(glm::distance(intersection, randLightPoint), 2.0)
+			double geo = glm::clamp(angle, 0.0, 1.0)  / glm::pow(glm::distance(intersection, randLightPoint), 2.0);
+			color += l.getColor() * 40.0 * geo; 
+		}
+	}
+
+	return color * area / (double)counter;
+}
+
+bool Scene::castShadowray(vec3& intersection, vec3& intersectionNormal, vec3& randLightPoint) const {
+
+	// if(intersection.z + EPSILON > randLightPoint.z) return false;
+
+	//SHADOW BIAS
+	vec3 startPoint = intersection + EPSILON * intersectionNormal;
+	Ray r{intersection, glm::normalize(randLightPoint - intersection)};
+	Ray rBias{startPoint, glm::normalize(randLightPoint - startPoint)};
+
+	
+	vec3 closestTriangle{1000.0f, 0.0f, 0.0f};
+	vec3 closestSphere{1000.0f, 0.0f, 0.0f};
+
+	Triangle hit = checkTriangleIntersections(r, closestTriangle, intersectionNormal);
+	Sphere sp = checkSphereIntersections(rBias, closestSphere, intersectionNormal);
+	
+	double distToLight = glm::distance(randLightPoint, intersection);
+	double distToTriangle = glm::distance(closestTriangle, intersection);
+	double distToSphere = glm::distance(closestSphere, startPoint);
+
+
+	if(distToTriangle + EPSILON < distToLight ) return false;
+	if(distToSphere + EPSILON < distToLight && glm::abs(distToSphere) > EPSILON) return false;
+	return true;
+	
 }
 
 void Scene::drawRoom() {
@@ -94,6 +152,7 @@ void Scene::drawRoom() {
 	Material TealLamb{ColorDbl{0.0f, 0.5f, 0.5f}, PERFECT_REFL};
 	Material PurpleLamb{ColorDbl{1.0f, 0.0f, 1.0f}, LAMBERTIAN};
 	Material GrayLamb{ColorDbl{0.7f, 0.7f, 0.7f}, LAMBERTIAN};
+	Material Teal{ColorDbl{0.0f, 0.5f, 0.5f}, LAMBERTIAN};
 
 
 	Material YellowPerf{ColorDbl{1.0f, 1.0f, 0.0f}, PERFECT_REFL};
@@ -212,34 +271,35 @@ void Scene::drawRoom() {
 	room.push_back(Triangle{p6_up, p5_up, p5_down, TealLamb});
 
 	//Add object Tetrhedron
-	vec3 tBotFront{3, 2, -4.5};
-	vec3 tBotRight{6, 6, -4.5};
-	vec3 tBotLeft{6, -2, -4.5};
-	vec3 tTop{6, 2, 0};
+	vec3 tBotFront{5, 2, -4.5};
+	vec3 tBotRight{7, 4, -4.5};
+	vec3 tBotLeft{7, 0, -4.5};
+	vec3 tTop{7, 2, -2.0};
 
 	// Bottom triangle
 	//(10, 2, -3)
 	//(11, 1, -3)
 	//(11, 3, -3)
-	room.push_back(Triangle{tBotFront, tBotLeft, tBotRight, RedPerf});
+	room.push_back(Triangle{tBotFront, tBotLeft, tBotRight, Teal});
 
 	//Left
 	//(10, 2, -3)
 	//(11, 2, -2)
 	//(11, 1, -3)
-	room.push_back(Triangle{tBotFront, tTop, tBotLeft, RedPerf});
+	room.push_back(Triangle{tBotFront, tTop, tBotLeft, Teal});
 	
 	//RIGHT
 	//(10, 2, -3)
 	//(11, 3, -3)
 	//(11, 2, -2)
-	room.push_back(Triangle{tBotFront, tBotRight, tTop, RedPerf});
+	room.push_back(Triangle{tBotFront, tBotRight, tTop, Teal});
 	//BACK
 	//(11, 3, -3)
 	//(11, 1, -3)
 	//(11, 2, -2)s
-	room.push_back(Triangle{tBotRight, tBotLeft, tTop, RedPerf});
+	room.push_back(Triangle{tBotRight, tBotLeft, tTop, Teal});
 
-	addSphere(Sphere{vec3{7.0f, -1.5f, 0.0f}, 1.0, YellowPerf});
-	addLight(Light{});
+	// addSphere(Sphere{vec3{7.0f, -1.5f, 0.0f}, 1.0f, YellowPerf});
+	addSphere(Sphere{vec3{5.0f, -3.5f, -1.0f}, 1.0f, RedLamb});
+	addLight();
 }

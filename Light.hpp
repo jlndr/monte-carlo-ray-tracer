@@ -3,6 +3,7 @@
 #include "glm/vec3.hpp"
 #include "vector"
 #include "Triangle.hpp"
+#include "typeDefinitions.hpp"
 
 class Light {
 public:
@@ -14,8 +15,10 @@ public:
 		*	 p3  -	p4
 		*/
 		//centrum (5 0 5)
-		Material m{ColorDbl{0.989f, 0.929f, 0.773f}, LIGHTSOURCE};
-		lightCenter = vec3{5.0f, 0.0f, 4.99f};
+	
+		lightCenter = vec3{5.0f, 0.0f, 4.98f};
+		color = m.getColor();
+		emission = m.getColor();
 		vec3 p1{6.0f, -1.0f, 4.99f};
 		vec3 p2{6.0f, 1.0f, 4.99f};
 		vec3 p3{4.0f, -1.0f, 4.99f};
@@ -25,13 +28,21 @@ public:
 	}
 	const std::vector<Triangle>  &getLightTriangles() const {return lightTriangles;}
 
-	vec3 getLightCenter() {
+	vec3 getLightCenter() const {
 		return lightCenter;
+	}
+	ColorDbl getEmission() const {
+		return emission;
+	}
+	ColorDbl getColor() const {
+		return color;
 	}
 
 private:
 	std::vector<Triangle> lightTriangles;
-	vec3 color;
+	ColorDbl color;
 	vec3 lightCenter;
+	ColorDbl emission;
+	Material m{ColorDbl{1.0f, 1.0f, 1.0f}, LIGHTSOURCE};
 };
 

@@ -5,10 +5,11 @@
 	1.2 Add the right properties to each material
 	1.3 bounceRay function
 
+2. Monte Carlo Integration
 
-2. Reflection
+3. Reflection
 	1.1 Build up and test RayTrees, Assume that all object are perfect mirrors and that walls are diffuse reflectors.
 
-3. Fix with shadow
+4. Fix with shadow
 	2.2 Light should not shadow itself
 	
