@@ -58,7 +58,9 @@ bool Sphere::rayIntersection(Ray& r, vec3& intersection, vec3& intersectionNorma
 		if(p1 < 0) return false;
 	}
 	
-	intersection = r.getStartPoint() + vec3{r.getDirection().x * p1, r.getDirection().y * p1, r.getDirection().z * p1};
+	intersection = r.getStartPoint() + vec3{r.getDirection() * (float) p1};
 	intersectionNormal = glm::normalize(intersection - position); 
 	return true;
 }
+
+//  

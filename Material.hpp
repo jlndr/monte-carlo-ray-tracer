@@ -33,7 +33,7 @@ ColorDbl Material::reflect() const {
 }
 
 ColorDbl Material::lambertianReflection() const {
-	return colorDbl * 0.8;
+	return colorDbl;
 }
 
 

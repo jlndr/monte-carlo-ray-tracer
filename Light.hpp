@@ -16,7 +16,7 @@ public:
 		*/
 		//centrum (5 0 5)
 	
-		lightCenter = vec3{5.0f, 0.0f, 4.98f};
+		lightCenter = vec3{5.0f, 0.0f, 4.9f};
 		color = m.getColor();
 		emission = m.getColor();
 		vec3 p1{6.0f, -1.0f, 4.99f};

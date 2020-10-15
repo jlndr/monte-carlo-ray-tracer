@@ -15,7 +15,7 @@ public:
 		positions[1] = p2;
 		positions[2] = p3;
 		material = m;            //
-		normal = glm::normalize(glm::cross(p3-p2, p2-p1));
+		normal = glm::normalize(glm::cross(p2-p1, p3-p2));
 	};
 
 	Triangle operator=(const Triangle &t) {
@@ -32,7 +32,7 @@ public:
 	double calcArea() const {
 		return 0.5 * glm::length(glm::cross(positions[1] - positions[0], positions[2] - positions[0]));
 	}
-	//TODO Make real random :)
+
 	vec3 getRandomPoint();
 
 private:

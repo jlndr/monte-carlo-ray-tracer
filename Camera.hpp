@@ -11,7 +11,7 @@
 // Image size
 const int WIDTH = 800;
 const int HEIGHT = 800;
-const int MAX_PASSES = 6;
+const int MAX_PASSES = 2;
 
 class Camera {
 public:
@@ -40,6 +40,8 @@ private:
 	//Variable to switch between 2 eyepoints
 	const vec3 CameraPos = CameraPos2;
 	std::vector<Pixel> pixels{WIDTH*HEIGHT};
+
+	double maxValue = 0;
 	
 };
 
@@ -59,7 +61,7 @@ ColorDbl Camera::traceRay(const Scene& s, Ray& r, int pass) {
 			if(pass == MAX_PASSES) return m.reflect();
 			vec3 newDirection = glm::reflect(r.getDirection(), glm::normalize(hit.getNormal()));
 			Ray newRay{closestTriangle, newDirection};
-			 return traceRay(s, newRay, ++pass);
+				return traceRay(s, newRay, ++pass);
 		}
 	}
 	else { //sphere stuff
@@ -69,16 +71,16 @@ ColorDbl Camera::traceRay(const Scene& s, Ray& r, int pass) {
 			if(pass == MAX_PASSES) return m.reflect();
 			vec3 newDirection = glm::reflect(r.getDirection(), glm::normalize(intersectionNormalS));
 			Ray newRay{closestSphere + intersectionNormalS * EPSILON, newDirection};
-			 return traceRay(s, newRay, ++pass);
+				return traceRay(s, newRay, ++pass);
 		}
 		// return sp.getMaterial().getColor();
 	}
 
-	vec3 intersection = closestSphere.x < closestTriangle.x ? closestSphere : closestTriangle;
-	vec3 intersectionNormal = closestSphere.x < closestTriangle.x ? intersectionNormalS : intersectionNormalT;
+	vec3 intersection = glm::distance(closestSphere, r.getStartPoint()) < glm::distance(closestTriangle, r.getStartPoint())  ? closestSphere : closestTriangle;
+	vec3 intersectionNormal = glm::distance(closestSphere, r.getStartPoint()) < glm::distance(closestTriangle, r.getStartPoint())  ? intersectionNormalS : intersectionNormalT;
 	// bool sphereHit = closestSphere.x < closestTriangle.x ? true : false;
 	
-	color = closestSphere.x < closestTriangle.x ? sp.getMaterial().reflect() : hit.getMaterial().reflect();
+	color = glm::distance(closestSphere, r.getStartPoint()) < glm::distance(closestTriangle, r.getStartPoint()) ? sp.getMaterial().reflect() : hit.getMaterial().reflect();
 	
 	ColorDbl light = s.calcLight(intersection, intersectionNormal);
 
@@ -113,6 +115,9 @@ void Camera::render(const Scene& s) {
 			ColorDbl color = traceRay(s, r, 0);
 
 			pixels[j + i * HEIGHT].setColor(color);
+			if(color.x > maxValue) maxValue = color.x;
+			if(color.y > maxValue) maxValue = color.y;
+			if(color.z > maxValue) maxValue = color.z;	
 		}
 	}
 	createImage();
@@ -124,7 +129,7 @@ void Camera::createImage() {
 	FILE *f = fopen("image.ppm", "wb"); //b = binary mode
 	fprintf(f, "P6\n %i %i 255\n", WIDTH, HEIGHT);
 	std::cout << "FIle open\n";
-	float norm = 255;
+	double norm = 255.0 / maxValue;
 	//Normera till 255
 	for (int i = 0; i < HEIGHT; ++i) {
 		for (int j = 0; j < WIDTH; ++j) {
