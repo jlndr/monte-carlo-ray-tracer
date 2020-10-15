@@ -15,7 +15,7 @@ public:
 		positions[1] = p2;
 		positions[2] = p3;
 		material = m;            //
-		normal = glm::normalize(glm::cross(p2-p1, p3-p2));
+		normal = glm::normalize(glm::cross(p2-p1, p3-p1));
 	};
 
 	Triangle operator=(const Triangle &t) {
