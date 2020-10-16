@@ -15,7 +15,7 @@ public:
 		positions[1] = p2;
 		positions[2] = p3;
 		material = m;            //
-		normal = glm::normalize(glm::cross(p2-p1, p3-p2));
+		normal = glm::normalize(glm::cross(p2-p1, p3-p1));
 	};
 
 	Triangle operator=(const Triangle &t) {
@@ -94,7 +94,7 @@ bool Triangle::rayIntersection(Ray& r, vec3& intersection, vec3& intersectionNor
 	double t = invDet * glm::dot(edge2, crossEdge1);
 	if (t > EPSILON) {
 		// glm::
-		intersection = r.getStartPoint() + vec3{rayDirection.x * t , rayDirection.y * t , rayDirection.z * t};
+		intersection = r.getStartPoint() + rayDirection * (float) t;
 		intersectionNormal = normal;
 		return true;
 	}

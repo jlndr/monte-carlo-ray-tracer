@@ -77,26 +77,27 @@ ColorDbl Scene::calcLight(vec3& intersection, vec3& intersectionNormal) const {
 
 	for(Triangle LT : l.getLightTriangles()) {
 		area += LT.calcArea();
-		for(int i = 0; i < 1; ++i){
+		for(int i = 0; i < 3; ++i){
 
-			//vec3 randLightPoint = LT.getRandomPoint();
-			vec3 randLightPoint = l.getLightCenter();
-			
-			if(!castShadowray(intersection, intersectionNormal, randLightPoint)) continue;
+			vec3 randLightPoint = LT.getRandomPoint();
+			// vec3 randLightPoint = l.getLightCenter();
+			vec3 iN = intersectionNormal;
+			vec3 it = intersection;
+			if(!castShadowray(it, iN, randLightPoint)) continue;
 			++counter;
 			
 			double cosAlpha = glm::dot(intersectionNormal, glm::normalize(randLightPoint - intersection)); 
-			double cosBeta = glm::dot(LT.getNormal(), -glm::normalize(intersection - randLightPoint));
+			double cosBeta = glm::dot(LT.getNormal(), glm::normalize(intersection - randLightPoint));
 			// double angle = glm::dot(glm::normalize(intersectionNormal), glm::normalize(randLightPoint - intersection)) ;
 			// double beta = glm::clamp((double) glm::dot(LT.getNormal(), glm::normalize(intersection - randLightPoint)), 0.0, 1.0);
 			if(cosAlpha < 0) cosAlpha = 0;
 			if(cosBeta < 0) cosBeta = 0;
-			double geo = 1 / glm::pow(glm::distance(intersection, randLightPoint), 2.0);
-			color += l.getColor() * cosAlpha;
+			double geo = cosBeta * cosAlpha/ glm::pow(glm::distance(intersection, randLightPoint), 2.0);
+			color += l.getColor() * geo * 50.0;
 		}
 	}
-	return color;
-	// return color * area / (double)counter;
+	// return color;
+	return color * area / (double)counter;
 }
 
 bool Scene::castShadowray(vec3& intersection, vec3& intersectionNormal, vec3& randLightPoint) const {
@@ -129,15 +130,15 @@ void Scene::drawRoom() {
 	//VERTEXES
 
 	//
-	//			p3-----p5
-	// 	p1-				 		-p6
 	//			p2-----p4
+	// 	p1-				 		-p6
+	//			p3-----p5
 	//
 	vec3 p1_up{-3.0f, 0.0f, 5.0f}, p1_down{-3.0f, 0.0f, -5.0f};
-	vec3 p2_up{0.0f, -6.0f, 5.0f}, p2_down{0.0f, -6.0f, -5.0f};
-	vec3 p3_up{0.0f, 6.0f, 5.0f}, p3_down{0.0f, 6.0f, -5.0f};
-	vec3 p4_up{10.0f, -6.0f, 5.0f}, p4_down{10.0f, -6.0f, -5.0f};
-	vec3 p5_up{10.0f, 6.0f, 5.0f}, p5_down{10.0f, 6.0f, -5.0f};
+	vec3 p2_up{0.0f, 6.0f, 5.0f}, p2_down{0.0f, 6.0f, -5.0f};
+	vec3 p3_up{0.0f, -6.0f, 5.0f}, p3_down{0.0f, -6.0f, -5.0f};
+	vec3 p4_up{10.0f, 6.0f, 5.0f}, p4_down{10.0f, 6.0f, -5.0f};
+	vec3 p5_up{10.0f, -6.0f, 5.0f}, p5_down{10.0f, -6.0f, -5.0f};
 	vec3 p6_up{13.0f, 0.0f, 5.0f}, p6_down{13.0f, 0.0f, -5.0f};
 
 	//Colors
@@ -146,7 +147,7 @@ void Scene::drawRoom() {
 	Material GreenLamb{ColorDbl{0.0f, 1.0f, 0.0f}, LAMBERTIAN};
 	Material BlueLamb{ColorDbl{0.0f, 0.0f, 1.0f}, LAMBERTIAN};
 	Material YellowLamb{ColorDbl{1.0f, 1.0f, 0.0f}, LAMBERTIAN};
-	Material TealLamb{ColorDbl{0.0f, 0.5f, 0.5f}, LAMBERTIAN};
+	Material TealLamb{ColorDbl{0.0f, 1.0f, 1.0f}, LAMBERTIAN};
 	Material PurpleLamb{ColorDbl{1.0f, 0.0f, 1.0f}, LAMBERTIAN};
 	Material GrayLamb{ColorDbl{0.7f, 0.7f, 0.7f}, LAMBERTIAN};
 
@@ -158,121 +159,129 @@ void Scene::drawRoom() {
 	//ROOF
 	//((-3, 0, 5))
 	//(0, 6 , 5)
-	//(0, -6, 5)
-	room.push_back(Triangle{p1_up, p3_up, p2_up, GrayLamb});
 
+	
+	//(0, -6, 5)
+	room.push_back(Triangle{p1_up, p2_up, p3_up, GrayLamb}); //Normal Negativ z
+	// std::cout << glm::cross(p1_up-p2_up, p3_up-p2_ up).z;
 	//(0, -6, 5)
 	//(0, 6, 5)
 	//(10, 6, 5)
-	room.push_back(Triangle{p2_up, p3_up, p5_up, GrayLamb});	
+	room.push_back(Triangle{p2_up, p5_up, p3_up, GrayLamb});	//Normal Negativ z
 	
 	//(0, -6, 5)
 	//(10, 6, 5)
 	//(10, -6, 5)
-	room.push_back(Triangle{p2_up, p5_up, p4_up, GrayLamb});
+	room.push_back(Triangle{p2_up, p4_up, p5_up, GrayLamb}); //Normal negativ z
 
 	//(10, 6, 5)
 	//(13, 0, 5)
 	//(10, -6, 5)
-	room.push_back(Triangle{p5_up, p6_up, p4_up, GrayLamb});
+	room.push_back(Triangle{p5_up, p4_up, p6_up, GrayLamb}); //Normal negativ z
 
 	//FLOOR
 	//((-3, 0, -5))
 	//(0, -6 , -5)
 	//(0, 6, -5)
-	room.push_back(Triangle{p1_down, p2_down, p3_down, WhiteLamb});
+	room.push_back(Triangle{p1_down, p3_down, p2_down, WhiteLamb}); //Normal positiv z
 	
 	//(0, -6, -5)
 	//(10, 6, -5)
 	//(0, 6, -5)
-	room.push_back(Triangle{p2_down, p5_down, p3_down, WhiteLamb});
+	room.push_back(Triangle{p2_down, p3_down, p5_down, WhiteLamb}); //Normal positiv z
 
 	//(0, -6, -5)
 	//(10, -6, -5)
 	//(10, 6, -5)
-	room.push_back(Triangle{p2_down, p4_down, p5_down, RedLamb});
+	room.push_back(Triangle{p2_down, p5_down, p4_down, RedLamb}); //Normal pos z
 
 	//(10, -6, -5)
 	//(13, 0, -5)
 	//(10, 6 , -5)
-	room.push_back(Triangle{p4_down, p6_down, p5_down, GreenLamb});
+	room.push_back(Triangle{p4_down, p5_down, p6_down, GreenLamb}); //Normal pos z
 
-	//Negativ xy 1
+	//POS Y  NEG x 1
 	//(-3, 0, 5)
 	//(0, -6, -5)
 	//(-3, 0, -5)
-	room.push_back(Triangle{p1_up, p2_down, p1_down, RedLamb});
+	room.push_back(Triangle{p1_up, p1_down, p2_down, RedLamb});
 
-	//Negativ xy 2
+	//POS Y  NEG X 2
 	//(-3, 0, 5)
 	//(0, -6, 5)
 	//(0, -6, -5)
-	room.push_back(Triangle{p1_up, p2_up, p2_down, RedLamb});
+	room.push_back(Triangle{p1_up, p2_down, p2_up, RedLamb});
 
 
-	//Negativ x pos y 1
+	//Negativ x NEG y 1
 	//(-3, 0, 5)
 	//(-3, 0, -5)
 	//(0, 6, -5)
-	room.push_back(Triangle{p1_up, p1_down, p3_down, GreenLamb});
+	room.push_back(Triangle{p1_up, p3_down, p1_down, GreenLamb});
 
-	//Negativ x pos y 2
+	//Negativ x NEG y 2
 	//(-3, 0, 5)
 	//(0, 6, -5)
 	//(0, 6, 5)
-	room.push_back(Triangle{p1_up, p3_down, p3_up, GreenLamb});
+	room.push_back(Triangle{p1_up, p3_up, p3_down, GreenLamb});
 
-	//Långsida neg Y
-	//(10, -6, 5)
-	//(0, -6, -5)
-	//(0, -6, 5)
-	room.push_back(Triangle{p4_up, p2_down, p2_up, BlueLamb});
+	//Långsida POS Y
+	//(10, 6, 5)
+	//(0, 6, -5)
+	//(0, 6, 5)
+	room.push_back(Triangle{p4_up, p2_up, p2_down, BlueLamb});
 
 	//(10, -6, 5)
 	//(10, -6, -5)
 	//(0, -6, -5)
-	room.push_back(Triangle{p4_up, p4_down, p2_down, BlueLamb});
+	room.push_back(Triangle{p4_up, p2_down, p4_down, BlueLamb});
 
 	//Långsida neg Y
-	//(10, 6, 5)
-	//(0, 6, 5)
-	//(0, 6, -5)
-	room.push_back(Triangle{p5_up, p3_up, p3_down, YellowLamb});
+	//(10, -6, 5)
+	//(0, -6, 5)
+	//(0, -6, -5)
+	room.push_back(Triangle{p5_up, p3_down, p3_up,YellowLamb});
 
 	//(10, 6, 5)
 	//(0, 6, -5)
 	//(10, 6, -5)
-	room.push_back(Triangle{p5_up, p3_down, p5_down, YellowLamb});
+	room.push_back(Triangle{p5_up, p5_down, p3_down, YellowLamb});
 
-	//Pos x neg y 1
+	//Pos x pos y 1
 	//(13, 0, 5)
 	//(13, 0, -5)
-	//(10, -6, -5)
-	room.push_back(Triangle{p6_up, p6_down, p4_down, PurpleLamb});
+	//(10, 6, -5)
+	room.push_back(Triangle{p6_up, p4_down, p6_down, PurpleLamb});
 
-	//Pos x neg y 2
+	//Pos x pos y 2
 	//(13, 0, 5) 
 	//(10, -6, -5)
 	//(10, -6, 5)
-	room.push_back(Triangle{p6_up, p4_down, p4_up, PurpleLamb});
+	room.push_back(Triangle{p6_up, p4_up, p4_down, PurpleLamb});
 
-	//pos x pos y 1
+	//pos x neg y 1
 	//(13, 0, 5)
 	//(10, 6, -5)
 	//(13, 0, -5)
-	room.push_back(Triangle{p6_up, p5_down, p6_down, TealPerf});
+	room.push_back(Triangle{p6_up, p6_down, p5_down, TealPerf});
 
 	//pos x pos y 2
 	//(13, 0, 5)
 	//(10, 6, 5)
 	//(10, 6, -5)
-	room.push_back(Triangle{p6_up, p5_up, p5_down, TealPerf});
+	room.push_back(Triangle{p6_up, p5_down, p5_up, TealPerf});
 
 	//Add object Tetrhedron
 	vec3 tBotFront{5, 2, -4.5};
-	vec3 tBotRight{7, 4, -4.5};
-	vec3 tBotLeft{7, 0, -4.5};
-	vec3 tTop{7, 2, -2.0};
+	vec3 tBotRight{6, 0, -4.5};
+	vec3 tBotLeft{6 , 4, -4.5};
+	vec3 tTop{6, 2, -2.0};
+
+	//BACK
+	//(11, 3, -3)
+	//(11, 1, -3)
+	//(11, 2, -2)s
+	room.push_back(Triangle{tBotRight, tBotLeft, tTop, TealLamb});
 
 	// Bottom triangle
 	//(10, 2, -3)
@@ -285,19 +294,15 @@ void Scene::drawRoom() {
 	//(11, 2, -2)
 	//(11, 1, -3)
 	room.push_back(Triangle{tBotFront, tTop, tBotLeft, TealLamb});
-	
+	//
 	//RIGHT
 	//(10, 2, -3)
 	//(11, 3, -3)
 	//(11, 2, -2)
 	room.push_back(Triangle{tBotFront, tBotRight, tTop, TealLamb});
-	//BACK
-	//(11, 3, -3)
-	//(11, 1, -3)
-	//(11, 2, -2)s
-	room.push_back(Triangle{tBotRight, tBotLeft, tTop, TealLamb});
+	
 
 	// addSphere(Sphere{vec3{7.0f, -1.5f, 0.0f}, 1.0f, YellowPerf});
-	// addSphere(Sphere{vec3{8.0f, -1.5f, -3.0f}, 2.0f, RedLamb});
+	addSphere(Sphere{vec3{8.0f, -1.5f, -3.0f}, 2.0f, RedLamb});
 	addLight();
 }
