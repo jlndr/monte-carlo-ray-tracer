@@ -1,4 +1,5 @@
 #pragma once
+#include <cmath>
 
 class Material {
 public:
@@ -33,7 +34,7 @@ ColorDbl Material::reflect() const {
 }
 
 ColorDbl Material::lambertianReflection() const {
-	return colorDbl;
+	return colorDbl * 0.8 / M_PI;
 }
 
 

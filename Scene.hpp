@@ -77,10 +77,10 @@ ColorDbl Scene::calcLight(vec3& intersection, vec3& intersectionNormal) const {
 
 	for(Triangle LT : l.getLightTriangles()) {
 		area += LT.calcArea();
-		for(int i = 0; i < 1; ++i){
+		for(int i = 0; i < 3; ++i){
 
-			//vec3 randLightPoint = LT.getRandomPoint();
-			vec3 randLightPoint = l.getLightCenter();
+			vec3 randLightPoint = LT.getRandomPoint();
+			// vec3 randLightPoint = l.getLightCenter();
 			vec3 iN = intersectionNormal;
 			vec3 it = intersection;
 			if(!castShadowray(it, iN, randLightPoint)) continue;
@@ -93,11 +93,11 @@ ColorDbl Scene::calcLight(vec3& intersection, vec3& intersectionNormal) const {
 			if(cosAlpha < 0) cosAlpha = 0;
 			if(cosBeta < 0) cosBeta = 0;
 			double geo = cosBeta * cosAlpha/ glm::pow(glm::distance(intersection, randLightPoint), 2.0);
-			color += l.getColor() * geo * 20.0;
+			color += l.getColor() * geo * 50.0;
 		}
 	}
-	return color;
-	// return color * area / (double)counter;
+	// return color;
+	return color * area / (double)counter;
 }
 
 bool Scene::castShadowray(vec3& intersection, vec3& intersectionNormal, vec3& randLightPoint) const {
