@@ -6,10 +6,8 @@
 	1.3 bounceRay function
 
 2. Monte Carlo Integration
+	2.1 Shoot ray randomly through pixels
 
-3. Reflection
-	1.1 Build up and test RayTrees, Assume that all object are perfect mirrors and that walls are diffuse reflectors.
-
-4. Fix with shadow
-	2.2 Light should not shadow itself
+4. FIXES
+	4.1 Maybe cleanup some messy code?
 	

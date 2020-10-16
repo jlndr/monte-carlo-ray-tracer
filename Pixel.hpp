@@ -18,14 +18,14 @@ public:
 		return *this;
 	};
 
-	float getSideLength() {return sideLength;}
+	static double getSideLength() {return sideLength;}
 	vec3 getPosition() {return position;}
 	vec3 getCenterPoint() {return centerPoint;}
 	void setColor(vec3 c) { color = c;}
 	vec3 getColor() {return color;}
 
 private:
-	const float sideLength = 0.0025;
+	static constexpr double sideLength = 0.0025;
 	vec3 position;
 	vec3 centerPoint;
 	vec3 color;

@@ -49,11 +49,12 @@ Triangle Scene::checkTriangleIntersections(Ray &r, vec3& closestTriangle, vec3& 
 	// For now when no object in the scene, intersection with only wall or floor or roof
 	Triangle t{};
 	for(auto i : room) {
-		vec3 intersection{};
-		if(!i.rayIntersection(r, intersection, intersectionNormal)) continue;
+		vec3 intersection{}, intersectionN{};
+		if(!i.rayIntersection(r, intersection, intersectionN)) continue;
 		if(glm::distance(r.getStartPoint(), intersection) < glm::distance(r.getStartPoint(), closestTriangle)) {
 			t = i;
 			closestTriangle = intersection;
+			intersectionNormal = intersectionN;
 		}	
 	}
 	return t;
@@ -77,14 +78,14 @@ ColorDbl Scene::calcLight(vec3& intersection, vec3& intersectionNormal) const {
 
 	for(Triangle LT : l.getLightTriangles()) {
 		area += LT.calcArea();
-		for(int i = 0; i < 3; ++i){
+		for(int i = 0; i < 12; ++i){
 
-			vec3 randLightPoint = LT.getRandomPoint();
+			vec3 randLightPoint = LT.getRandomPoint() ;
 			// vec3 randLightPoint = l.getLightCenter();
 			vec3 iN = intersectionNormal;
 			vec3 it = intersection;
-			if(!castShadowray(it, iN, randLightPoint)) continue;
 			++counter;
+			if(!castShadowray(it, iN, randLightPoint)) continue;
 			
 			double cosAlpha = glm::dot(intersectionNormal, glm::normalize(randLightPoint - intersection)); 
 			double cosBeta = glm::dot(LT.getNormal(), glm::normalize(intersection - randLightPoint));
@@ -93,7 +94,7 @@ ColorDbl Scene::calcLight(vec3& intersection, vec3& intersectionNormal) const {
 			if(cosAlpha < 0) cosAlpha = 0;
 			if(cosBeta < 0) cosBeta = 0;
 			double geo = cosBeta * cosAlpha/ glm::pow(glm::distance(intersection, randLightPoint), 2.0);
-			color += l.getColor() * geo * 50.0;
+			color += l.getColor() * geo * 200.0;
 		}
 	}
 	// return color;
@@ -198,7 +199,7 @@ void Scene::drawRoom() {
 	//(10, -6, -5)
 	//(13, 0, -5)
 	//(10, 6 , -5)
-	room.push_back(Triangle{p4_down, p5_down, p6_down, GreenLamb}); //Normal pos z
+	room.push_back(Triangle{p4_down, p5_down, p6_down, WhiteLamb}); //Normal pos z
 
 	//POS Y  NEG x 1
 	//(-3, 0, 5)
@@ -272,16 +273,10 @@ void Scene::drawRoom() {
 	room.push_back(Triangle{p6_up, p5_down, p5_up, TealPerf});
 
 	//Add object Tetrhedron
-	vec3 tBotFront{5, 2, -4.5};
-	vec3 tBotRight{6, 0, -4.5};
-	vec3 tBotLeft{6 , 4, -4.5};
-	vec3 tTop{6, 2, -2.0};
-
-	//BACK
-	//(11, 3, -3)
-	//(11, 1, -3)
-	//(11, 2, -2)s
-	room.push_back(Triangle{tBotRight, tBotLeft, tTop, TealLamb});
+	vec3 tBotFront{5, 2, -2.5};
+	vec3 tBotRight{6, 0, -2.5};
+	vec3 tBotLeft{6 , 4, -2.5};
+	vec3 tTop{6, 2, 0};
 
 	// Bottom triangle
 	//(10, 2, -3)
@@ -300,9 +295,17 @@ void Scene::drawRoom() {
 	//(11, 3, -3)
 	//(11, 2, -2)
 	room.push_back(Triangle{tBotFront, tBotRight, tTop, TealLamb});
+
+
+	//BACK
+	//(11, 3, -3)
+	//(11, 1, -3)
+	//(11, 2, -2)s
+	room.push_back(Triangle{tBotRight, tBotLeft, tTop, TealLamb});
+
 	
 
 	// addSphere(Sphere{vec3{7.0f, -1.5f, 0.0f}, 1.0f, YellowPerf});
-	addSphere(Sphere{vec3{8.0f, -1.5f, -3.0f}, 2.0f, RedLamb});
+	addSphere(Sphere{vec3{8.0f, -1.5f, -1.0f}, 2.0f, RedLamb});
 	addLight();
 }

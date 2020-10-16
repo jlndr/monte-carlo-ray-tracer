@@ -8,6 +8,10 @@
 #include "Ray.hpp"
 #include "Sphere.hpp"
 #include <cstdio>
+#include "utils.hpp"
+
+#include <iostream>
+
 // Image size
 const int WIDTH = 800;
 const int HEIGHT = 800;
@@ -108,16 +112,40 @@ void Camera::createPixels() {
 }
 
 void Camera::render(const Scene& s) {
+	const int SUBPIXELS = 2; //In each direction
+	const float subSideLength = Pixel::getSideLength() / SUBPIXELS; 
 	std::cout << "\nRENDER\n";
+	// double max = 800*800;
+	// int counter = 0;
 	for (int i = 0; i < HEIGHT; ++i) {
 		for (int j = 0; j < WIDTH; ++j) {
-			Ray r{CameraPos, glm::normalize(pixels[j + i * HEIGHT].getCenterPoint() - CameraPos)};
-			ColorDbl color = traceRay(s, r, 0);
+			ColorDbl color{0.0, 0.0, 0.0};
+			
+			//Loop over subpixels
+			for(int k = 0; k < SUBPIXELS; ++k) {
+				for(int m = 0; m < SUBPIXELS; ++m) {
+					
+					double y = randMinMax(k * subSideLength, subSideLength + k * subSideLength);
+					double z = randMinMax(m * subSideLength, subSideLength + m * subSideLength);
+					vec3 point{0.0, y, z};
+					
+					// if(i == 400) std::cout << "y: " << point.y << " " << "z: " << point.z << "\n"; 
+					Ray r{CameraPos, glm::normalize(pixels[j + i * HEIGHT].getPosition() - point - CameraPos)};
+					for(int n = 0; n < 50; ++n) {
+						color += traceRay(s, r, 0);
+					}
+				}
+			}
 
+			// Ray r{CameraPos, glm::normalize(pixels[j + i * HEIGHT].getCenterPoint() - CameraPos)};
+			// ColorDbl color = traceRay(s, r, 0);
+			
 			pixels[j + i * HEIGHT].setColor(color);
 			if(color.x > maxValue) maxValue = color.x;
 			if(color.y > maxValue) maxValue = color.y;
 			if(color.z > maxValue) maxValue = color.z;	
+		// ++counter;
+		// std::cout << "\r" << counter/max << "%";
 		}
 	}
 	createImage();
