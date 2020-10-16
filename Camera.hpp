@@ -11,7 +11,7 @@
 // Image size
 const int WIDTH = 800;
 const int HEIGHT = 800;
-const int MAX_PASSES = 2;
+const int MAX_PASSES = 6;
 
 class Camera {
 public:
@@ -27,7 +27,7 @@ public:
 	
 private:
 	// Camera plane
-	const vec3 topLeft{0.0f, -1.0f, 1.0f};
+	const vec3 topLeft{0.0f, 1.0f, 1.0f};
 	const vec3 topRight{-2.0f, 1.0f, 1.0f};
 	const vec3 bottomLeft{-2.0f, -1.0f, -1.0f};
 	const vec3 bottomRight{-2.0f, 1.0f, -1.0f};
@@ -98,7 +98,7 @@ void Camera::createPixels() {
 
 	for (int i = 0; i < HEIGHT; ++i) {
 		for (int j = 0; j < WIDTH; ++j) {
-			pixels[j + i * HEIGHT] = Pixel{topLeft + vec3{0.0f, 0.0025 * j, -0.0025 * i}};
+			pixels[j + i * HEIGHT] = Pixel{topLeft + vec3{0.0f, -0.0025 * j, -0.0025 * i}};
 			// std::cout << pixels[j + i * HEIGHT].getPosition().y << " ";
 		}
 		// std::cout << "\n";

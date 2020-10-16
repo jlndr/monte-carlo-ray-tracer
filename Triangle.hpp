@@ -94,7 +94,7 @@ bool Triangle::rayIntersection(Ray& r, vec3& intersection, vec3& intersectionNor
 	double t = invDet * glm::dot(edge2, crossEdge1);
 	if (t > EPSILON) {
 		// glm::
-		intersection = r.getStartPoint() + vec3{rayDirection.x * t , rayDirection.y * t , rayDirection.z * t};
+		intersection = r.getStartPoint() + rayDirection * (float) t;
 		intersectionNormal = normal;
 		return true;
 	}

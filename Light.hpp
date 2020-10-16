@@ -25,8 +25,7 @@ public:
 		vec3 p4{4.0f, -1.0f, 4.99f};
 		lightTriangles.push_back(Triangle{p1, p2, p3, m});
 		lightTriangles.push_back(Triangle{p4, p3, p2, m});
-		// Triangle test{p4, p3, p2, m};
-		// std::cout << "Normal : " << test.getNormal().x << " " << test.getNormal().y << " " << test.getNormal().z << " \n";
+		
 	}
 	const std::vector<Triangle>  &getLightTriangles() const {return lightTriangles;}
 

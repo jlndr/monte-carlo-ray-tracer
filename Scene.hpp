@@ -81,18 +81,19 @@ ColorDbl Scene::calcLight(vec3& intersection, vec3& intersectionNormal) const {
 
 			//vec3 randLightPoint = LT.getRandomPoint();
 			vec3 randLightPoint = l.getLightCenter();
-			
-			if(!castShadowray(intersection, intersectionNormal, randLightPoint)) continue;
+			vec3 iN = intersectionNormal;
+			vec3 it = intersection;
+			if(!castShadowray(it, iN, randLightPoint)) continue;
 			++counter;
 			
 			double cosAlpha = glm::dot(intersectionNormal, glm::normalize(randLightPoint - intersection)); 
 			double cosBeta = glm::dot(LT.getNormal(), glm::normalize(intersection - randLightPoint));
 			// double angle = glm::dot(glm::normalize(intersectionNormal), glm::normalize(randLightPoint - intersection)) ;
 			// double beta = glm::clamp((double) glm::dot(LT.getNormal(), glm::normalize(intersection - randLightPoint)), 0.0, 1.0);
-			// if(cosAlpha < 0) cosAlpha = 0;
+			if(cosAlpha < 0) cosAlpha = 0;
 			if(cosBeta < 0) cosBeta = 0;
-			double geo = cosAlpha / glm::pow(glm::distance(intersection, randLightPoint), 2.0);
-			color += l.getColor() * cosAlpha;
+			double geo = cosBeta * cosAlpha/ glm::pow(glm::distance(intersection, randLightPoint), 2.0);
+			color += l.getColor() * geo * 20.0;
 		}
 	}
 	return color;
@@ -146,7 +147,7 @@ void Scene::drawRoom() {
 	Material GreenLamb{ColorDbl{0.0f, 1.0f, 0.0f}, LAMBERTIAN};
 	Material BlueLamb{ColorDbl{0.0f, 0.0f, 1.0f}, LAMBERTIAN};
 	Material YellowLamb{ColorDbl{1.0f, 1.0f, 0.0f}, LAMBERTIAN};
-	Material TealLamb{ColorDbl{0.0f, 0.5f, 0.5f}, LAMBERTIAN};
+	Material TealLamb{ColorDbl{0.0f, 1.0f, 1.0f}, LAMBERTIAN};
 	Material PurpleLamb{ColorDbl{1.0f, 0.0f, 1.0f}, LAMBERTIAN};
 	Material GrayLamb{ColorDbl{0.7f, 0.7f, 0.7f}, LAMBERTIAN};
 
@@ -162,7 +163,7 @@ void Scene::drawRoom() {
 	
 	//(0, -6, 5)
 	room.push_back(Triangle{p1_up, p2_up, p3_up, GrayLamb}); //Normal Negativ z
-	// std::cout << glm::cross(p1_up-p2_up, p3_up-p2_up).z;
+	// std::cout << glm::cross(p1_up-p2_up, p3_up-p2_ up).z;
 	//(0, -6, 5)
 	//(0, 6, 5)
 	//(10, 6, 5)
@@ -271,10 +272,16 @@ void Scene::drawRoom() {
 	room.push_back(Triangle{p6_up, p5_down, p5_up, TealPerf});
 
 	//Add object Tetrhedron
-	vec3 tBotFront{5, -2, -4.5};
-	vec3 tBotRight{7, -4, -4.5};
-	vec3 tBotLeft{7, 0, -4.5};
-	vec3 tTop{7, -2, -2.0};
+	vec3 tBotFront{5, 2, -4.5};
+	vec3 tBotRight{6, 0, -4.5};
+	vec3 tBotLeft{6 , 4, -4.5};
+	vec3 tTop{6, 2, -2.0};
+
+	//BACK
+	//(11, 3, -3)
+	//(11, 1, -3)
+	//(11, 2, -2)s
+	room.push_back(Triangle{tBotRight, tBotLeft, tTop, TealLamb});
 
 	// Bottom triangle
 	//(10, 2, -3)
@@ -287,21 +294,15 @@ void Scene::drawRoom() {
 	//(11, 2, -2)
 	//(11, 1, -3)
 	room.push_back(Triangle{tBotFront, tTop, tBotLeft, TealLamb});
-	
+	//
 	//RIGHT
 	//(10, 2, -3)
 	//(11, 3, -3)
 	//(11, 2, -2)
 	room.push_back(Triangle{tBotFront, tBotRight, tTop, TealLamb});
-	//BACK
-	//(11, 3, -3)
-	//(11, 1, -3)
-	//(11, 2, -2)s
-	room.push_back(Triangle{tBotRight, tBotLeft, tTop, TealLamb});
-	// Triangle test{tBotRight, tBotLeft, tTop, GrayLamb};
-	// std::cout << "Normal : " << test.getNormal().x << " " << test.getNormal().y << " " << test.getNormal().z << " \n";
+	
 
 	// addSphere(Sphere{vec3{7.0f, -1.5f, 0.0f}, 1.0f, YellowPerf});
-	// addSphere(Sphere{vec3{8.0f, -1.5f, -3.0f}, 2.0f, RedLamb});
+	addSphere(Sphere{vec3{8.0f, -1.5f, -3.0f}, 2.0f, RedLamb});
 	addLight();
 }
