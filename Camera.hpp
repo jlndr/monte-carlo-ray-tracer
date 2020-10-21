@@ -10,13 +10,16 @@
 #include <cstdio>
 #include "utils.hpp"
 
+#include "glm/gtx/rotate_vector.hpp"
 #include <iostream>
+#include <cmath>
 
 // Image size
 const int WIDTH = 800;
 const int HEIGHT = 800;
-const int MAX_PASSES = 6;
-
+const int MAX_PASSES = 2;
+int count = 0;
+int count2 = 0;
 class Camera {
 public:
 	Camera(){
@@ -52,7 +55,7 @@ private:
 ColorDbl Camera::traceRay(const Scene& s, Ray& r, int pass) {
 	vec3 closestTriangle{1000.0, 0.0, 0.0};
 	vec3 closestSphere{1000.0, 0.0, 0.0};
-	vec3 color{};
+	ColorDbl color{};
 	vec3 intersectionNormalT{};
 	vec3 intersectionNormalS{};
 	Triangle hit = s.checkTriangleIntersections(r, closestTriangle, intersectionNormalT);
@@ -83,18 +86,56 @@ ColorDbl Camera::traceRay(const Scene& s, Ray& r, int pass) {
 	vec3 intersection = glm::distance(closestSphere, r.getStartPoint()) < glm::distance(closestTriangle, r.getStartPoint())  ? closestSphere : closestTriangle;
 	vec3 intersectionNormal = glm::distance(closestSphere, r.getStartPoint()) < glm::distance(closestTriangle, r.getStartPoint())  ? intersectionNormalS : intersectionNormalT;
 	// bool sphereHit = closestSphere.x < closestTriangle.x ? true : false;
-	
-	color = glm::distance(closestSphere, r.getStartPoint()) < glm::distance(closestTriangle, r.getStartPoint()) ? sp.getMaterial().reflect() : hit.getMaterial().reflect();
-	
+
+	Material m = glm::distance(closestSphere, r.getStartPoint()) < glm::distance(closestTriangle, r.getStartPoint())  ? sp.getMaterial() : hit.getMaterial();
+	color = m.reflect();
+
 	ColorDbl light = s.calcLight(intersection, intersectionNormal);
 
 	color *= light;
-	//Shadowray
-	// if(!castShadowray(s, intersection, intersectionNormal)) {
-	// 	color.x /= 2;
-	// 	color.y /= 2;
-	// 	color.z /= 2;
-	// }
+	if(pass != 0) {
+		float dist = glm::distance(intersection, r.getStartPoint());
+		
+		if(dist > 1) color *=  1 / glm::pow(dist, 2.0); // no risk of dividing with zero
+		else color *= 3.0;
+		
+		//else color *= 0;
+	}
+	//bouncing shit
+	// check if we should bounce with russian roulette
+	//if yes
+	double contr = glm::max(glm::max(color.x, color.y), color.z);
+	++count;
+	if(pass < MAX_PASSES && uniformRand() < contr) {
+		float inclAngle = (float)acos(uniformRand());
+		float azimAngle = (float)2 * M_PI * uniformRand();
+		
+		vec3 rp = r.getDirection();
+		vec3 rProj{glm::normalize(rp - glm::dot(rp, intersectionNormal) * intersectionNormal)};
+
+		vec3 thirdAxis{glm::cross(rProj, intersectionNormal)};
+		vec3 randDir = intersectionNormal;
+		
+		randDir = glm::normalize(glm::rotate(
+			randDir,
+			inclAngle,
+			rProj
+		));
+
+		randDir = glm::normalize(glm::rotate(
+			randDir,
+			azimAngle,
+			intersectionNormal
+		));
+
+		Ray reflectedRay{intersection, randDir};
+		color += traceRay(s, reflectedRay, ++pass) * (1.0 / (pass + 1)); // + 1 is to avoid dividing with zero which is illegal
+		count2++;
+	}
+	// call hemis func s.hemisU(intersection, normal mm)
+	
+	// if no
+
 	return color;
 }
 
@@ -131,7 +172,7 @@ void Camera::render(const Scene& s) {
 					
 					// if(i == 400) std::cout << "y: " << point.y << " " << "z: " << point.z << "\n"; 
 					Ray r{CameraPos, glm::normalize(pixels[j + i * HEIGHT].getPosition() - point - CameraPos)};
-					for(int n = 0; n < 50; ++n) {
+					for(int n = 0; n < 3; ++n) {
 						color += traceRay(s, r, 0);
 					}
 				}
@@ -148,6 +189,9 @@ void Camera::render(const Scene& s) {
 		// std::cout << "\r" << counter/max << "%";
 		}
 	}
+	std::cout << "Counter1: " << count << "\n";
+	std::cout << "Counter2: " << count2 << "\n";
+
 	createImage();
 }
 
