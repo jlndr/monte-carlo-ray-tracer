@@ -78,7 +78,7 @@ ColorDbl Scene::calcLight(vec3& intersection, vec3& intersectionNormal) const {
 
 	for(Triangle LT : l.getLightTriangles()) {
 		area += LT.calcArea();
-		for(int i = 0; i < 1; ++i){
+		for(int i = 0; i < 3; ++i){
 
 			vec3 randLightPoint = LT.getRandomPoint() ;
 			// vec3 randLightPoint = l.getLightCenter();
@@ -94,7 +94,7 @@ ColorDbl Scene::calcLight(vec3& intersection, vec3& intersectionNormal) const {
 			if(cosAlpha < 0) cosAlpha = 0;
 			if(cosBeta < 0) cosBeta = 0;
 			double geo = cosBeta * cosAlpha/ glm::pow(glm::distance(intersection, randLightPoint), 2.0);
-			color += l.getColor() * geo * 200.0;
+			color += l.getColor() * geo * 25.0;
 		}
 	}
 	// return color;
@@ -273,10 +273,10 @@ void Scene::drawRoom() {
 	room.push_back(Triangle{p6_up, p5_down, p5_up, TealPerf});
 
 	//Add object Tetrhedron
-	vec3 tBotFront{5, 4, -2.5};
-	vec3 tBotRight{6, 2, -2.5};
-	vec3 tBotLeft{6 , 6, -2.5};
-	vec3 tTop{6, 4, 0};
+	vec3 tBotFront{5, 2, -4.5};
+	vec3 tBotRight{6, 0, -4.5};
+	vec3 tBotLeft{6 , 4, -4.5};
+	vec3 tTop{6, 2, -2};
 
 	// Bottom triangle
 	//(10, 2, -3)
@@ -306,6 +306,6 @@ void Scene::drawRoom() {
 	
 
 	// addSphere(Sphere{vec3{7.0f, -1.5f, 0.0f}, 1.0f, YellowPerf});
-	addSphere(Sphere{vec3{8.0f, -5.5f, -1.0f}, 2.0f, BlueLamb});
+	addSphere(Sphere{vec3{7.0f, -3.5f, -3.5f}, 2.0f, WhiteLamb});
 	addLight();
 }
