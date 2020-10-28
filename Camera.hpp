@@ -165,7 +165,7 @@ void Camera::createPixels() {
 
 void Camera::render(const Scene& s) {
 	const int SUBPIXELS = 2; //In each direction
-	const int samples = 1;
+	const int samples = 3;
 	const float subSideLength = Pixel::getSideLength() / SUBPIXELS; 
 	std::cout << "\nRENDER\n";
 	// double max = 800;
@@ -178,13 +178,13 @@ void Camera::render(const Scene& s) {
 			for(int k = 0; k < SUBPIXELS; ++k) {
 				for(int m = 0; m < SUBPIXELS; ++m) {
 					
-					double y = randMinMax(k * subSideLength, subSideLength + k * subSideLength);
-					double z = randMinMax(m * subSideLength, subSideLength + m * subSideLength);
-					vec3 point{0.0, y, z};
 					
 					// if(i == 400) std::cout << "y: " << point.y << " " << "z: " << point.z << "\n"; 
-					Ray r{CameraPos, glm::normalize(pixels[j + i * HEIGHT].getPosition() - point - CameraPos)};
 					for(int n = 0; n < samples; ++n) {
+						double y = randMinMax(k * subSideLength, subSideLength + k * subSideLength);
+						double z = randMinMax(m * subSideLength, subSideLength + m * subSideLength);
+						vec3 point{0.0, y, z};
+						Ray r{CameraPos, glm::normalize(pixels[j + i * HEIGHT].getPosition() - point - CameraPos)};
 						color += traceRay(s, r, 0);
 					}
 
