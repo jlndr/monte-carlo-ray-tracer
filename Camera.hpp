@@ -30,7 +30,7 @@ public:
 	void render(const Scene& s);
 	void createImage();
 	ColorDbl traceRay(const Scene& s, Ray& r, int pass);
-	
+	ColorDbl sampleIndirectRay(const Scene &s, const vec3& point, const vec3& normal);
 	
 private:
 	// Camera plane
@@ -55,7 +55,7 @@ private:
 ColorDbl Camera::traceRay(const Scene& s, Ray& r, int pass) {
 	vec3 closestTriangle{1000.0, 0.0, 0.0};
 	vec3 closestSphere{1000.0, 0.0, 0.0};
-	ColorDbl color{};
+	
 	vec3 intersectionNormalT{};
 	vec3 intersectionNormalS{};
 	Triangle hit = s.checkTriangleIntersections(r, closestTriangle, intersectionNormalT);
@@ -87,68 +87,83 @@ ColorDbl Camera::traceRay(const Scene& s, Ray& r, int pass) {
 	vec3 intersectionNormal = glm::distance(closestSphere, r.getStartPoint()) < glm::distance(closestTriangle, r.getStartPoint())  ? intersectionNormalS : intersectionNormalT;
 	// bool sphereHit = closestSphere.x < closestTriangle.x ? true : false;
 
+	ColorDbl directLight{};
 	Material m = glm::distance(closestSphere, r.getStartPoint()) < glm::distance(closestTriangle, r.getStartPoint())  ? sp.getMaterial() : hit.getMaterial();
-	color = m.reflect();
+	directLight = m.reflect();
 
 	ColorDbl light = s.calcLight(intersection, intersectionNormal);
 
-	color *= light;
+	directLight *= light;
+	//Direct light done
 
-	// if(pass != 0) {
-	// 	float dist = glm::distance(intersection, r.getStartPoint());
-		
-	// 	// if(dist < 1) color 
-	// 	// if(dist > 1) color *=  1 / glm::pow(dist, 2.0); // no risk of dividing with zero
-	// 	// else color *= 3.0;
-		
-	// 	//else color *= 0;
-	// }
-	//bouncing shit
-	// check if we should bounce with russian roulette
-	//if yes
-	double contr = glm::max(glm::max(color.x, color.y), color.z);
-	++count;
+	//Compute indirect
 
-	if(pass < MAX_PASSES && uniformRand() < contr) {
-		
-		float inclAngle = (float)acos(sqrt(uniformRand()));
-		float azimAngle = (float)2 * M_PI * uniformRand();
-		
-		// vec3 rp = r.getDirection();
-		// vec3 rProj{glm::normalize(rp - glm::dot(rp, intersectionNormal) * intersectionNormal)};
-
-		// vec3 thirdAxis{glm::cross(rProj, intersectionNormal)};
-		vec3 randDir = intersectionNormal;
-
-		vec3 helper = intersectionNormal + vec3{1, 1, 1};
-		vec3 tangent = glm::normalize(glm::cross(intersectionNormal, helper));
-		
-		randDir = glm::normalize(glm::rotate(
-			randDir,
-			inclAngle,
-			tangent
-		));
-
-		randDir = glm::normalize(glm::rotate(
-			randDir,
-			azimAngle,
-			intersectionNormal
-		));
-
-		Ray reflectedRay{intersection, randDir};
-		color += traceRay(s, reflectedRay, ++pass);
-		// color += traceRay(s, reflectedRay, ++pass) * (1.0 / (pass + 1)); // + 1 is to avoid dividing with zero which is illegal
-		count2++;
+	// Determine number of ray from intersection point. Hemisphere samples
+	const int indirectSamples = 12;
+	ColorDbl indirect{};
+	for(int i = 0; i < indirectSamples; ++i) {
+		indirect += sampleIndirectRay(s, intersection, intersectionNormal) ;
 	}
+	indirect *= (1.0 / (double)indirectSamples * M_PI);
 	
-	// // color = color + (indirect *(1.0/glm::max(glm::max(color.x, color.y), color.z)));
-	// color = color + (indirect / M_PI);
-	// call hemis func s.hemisU(intersection, normal mm)
+	//directlight - indirect
+	// indirect = indirect, ColorDbl{}, directLight);
+	ColorDbl color =  directLight + indirect * 0.1; //+ asdasd
+
+	return color; // + indirect
+}
+
+ColorDbl Camera::sampleIndirectRay(const Scene& s, const vec3& point, const vec3& normal) {
+	ColorDbl color{0.0, 0.0, 0.0};
 	
-	// if no
+	float inclAngle = (float)acos(sqrt(uniformRand()));
+	float azimAngle = (float)2 * M_PI * uniformRand();
+	
+	// vec3 rp = r.getDirection();
+	// vec3 rProj{glm::normalize(rp - glm::dot(rp, intersectionNormal) * intersectionNormal)};
+
+	// vec3 thirdAxis{glm::cross(rProj, intersectionNormal)};
+	vec3 randDir = normal;
+
+	vec3 helper = normal + vec3{1, 1, 1};
+	vec3 tangent = glm::normalize(glm::cross(normal, helper));
+	
+	randDir = glm::normalize(glm::rotate(
+		randDir,
+		inclAngle,
+		tangent
+	));
+
+	randDir = glm::normalize(glm::rotate(
+		randDir,
+		azimAngle,
+		normal
+	));
+
+	Ray reflectedRay{point, randDir};
+	//Check intersections
+	//color from intersection :)
+	vec3 closestTriangle{1000.0, 0.0, 0.0};
+	vec3 closestSphere{1000.0, 0.0, 0.0};
+	
+	vec3 intersectionNormalT{};
+	vec3 intersectionNormalS{};
+	Triangle hit = s.checkTriangleIntersections(reflectedRay, closestTriangle, intersectionNormalT);
+	Sphere sp = s.checkSphereIntersections(reflectedRay, closestSphere, intersectionNormalS);
+
+	Material m = glm::distance(closestSphere, reflectedRay.getStartPoint()) < glm::distance(closestTriangle, reflectedRay.getStartPoint())  ? sp.getMaterial() : hit.getMaterial();
+
+	if(m.isType(LIGHTSOURCE)) return m.getColor();
+	else if(m.isType(PERFECT_REFL)) return color;
+
+	color = m.reflect();
+	// color += traceRay(s, reflectedRay, ++pass);
+	// color += traceRay(s, reflectedRay, ++pass) * (1.0 / (pass + 1)); // + 1 is to avoid dividing with zero which is illegal
 
 	return color;
+
 }
+
 
 void Camera::createPixels() {
 
@@ -165,7 +180,7 @@ void Camera::createPixels() {
 
 void Camera::render(const Scene& s) {
 	const int SUBPIXELS = 2; //In each direction
-	const int samples = 3;
+	const int samples = 12;
 	const float subSideLength = Pixel::getSideLength() / SUBPIXELS; 
 	std::cout << "\nRENDER\n";
 	// double max = 800;
