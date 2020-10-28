@@ -169,7 +169,6 @@ ColorDbl Camera::sampleIndirectRay(const Scene& s, const vec3& point, const vec3
 void Camera::createPixels() {
 
 	for (int i = 0; i < HEIGHT; ++i) {
-		// Parallellize the for loop with openMP.
 		for (int j = 0; j < WIDTH; ++j) {
 			pixels[j + i * HEIGHT] = Pixel{topLeft + vec3{0.0f, -0.0025 * j, -0.0025 * i}};
 			// std::cout << pixels[j + i * HEIGHT].getPosition().y << " ";
