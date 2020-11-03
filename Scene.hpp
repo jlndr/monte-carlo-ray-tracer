@@ -78,7 +78,7 @@ ColorDbl Scene::calcLight(vec3& intersection, vec3& intersectionNormal) const {
 
 	for(Triangle LT : l.getLightTriangles()) {
 		area += LT.calcArea();
-		for(int i = 0; i < 3; ++i){
+		for(int i = 0; i < 1; ++i){
 
 			vec3 randLightPoint = LT.getRandomPoint() ;
 			// vec3 randLightPoint = l.getLightCenter();
@@ -194,7 +194,7 @@ void Scene::drawRoom() {
 	//(0, -6, -5)
 	//(10, -6, -5)
 	//(10, 6, -5)
-	room.push_back(Triangle{p2_down, p5_down, p4_down, RedLamb}); //Normal pos z
+	room.push_back(Triangle{p2_down, p5_down, p4_down, WhiteLamb}); //Normal pos z
 
 	//(10, -6, -5)
 	//(13, 0, -5)
@@ -205,60 +205,60 @@ void Scene::drawRoom() {
 	//(-3, 0, 5)
 	//(0, -6, -5)
 	//(-3, 0, -5)
-	room.push_back(Triangle{p1_up, p1_down, p2_down, RedLamb});
+	room.push_back(Triangle{p1_up, p1_down, p2_down, YellowLamb});
 
 	//POS Y  NEG X 2
 	//(-3, 0, 5)
 	//(0, -6, 5)
 	//(0, -6, -5)
-	room.push_back(Triangle{p1_up, p2_down, p2_up, RedLamb});
+	room.push_back(Triangle{p1_up, p2_down, p2_up, YellowLamb});
 
 
 	//Negativ x NEG y 1
 	//(-3, 0, 5)
 	//(-3, 0, -5)
 	//(0, 6, -5)
-	room.push_back(Triangle{p1_up, p3_down, p1_down, GreenLamb});
+	room.push_back(Triangle{p1_up, p3_down, p1_down, WhiteLamb});
 
 	//Negativ x NEG y 2
 	//(-3, 0, 5)
 	//(0, 6, -5)
 	//(0, 6, 5)
-	room.push_back(Triangle{p1_up, p3_up, p3_down, GreenLamb});
+	room.push_back(Triangle{p1_up, p3_up, p3_down, WhiteLamb});
 
 	//Långsida POS Y
 	//(10, 6, 5)
 	//(0, 6, -5)
 	//(0, 6, 5)
-	room.push_back(Triangle{p4_up, p2_up, p2_down, BlueLamb});
+	room.push_back(Triangle{p4_up, p2_up, p2_down, RedLamb});
 
 	//(10, -6, 5)
 	//(10, -6, -5)
 	//(0, -6, -5)
-	room.push_back(Triangle{p4_up, p2_down, p4_down, BlueLamb});
+	room.push_back(Triangle{p4_up, p2_down, p4_down, RedLamb});
 
 	//Långsida neg Y
 	//(10, -6, 5)
 	//(0, -6, 5)
 	//(0, -6, -5)
-	room.push_back(Triangle{p5_up, p3_down, p3_up,YellowLamb});
+	room.push_back(Triangle{p5_up, p3_down, p3_up,GreenLamb});
 
 	//(10, 6, 5)
 	//(0, 6, -5)
 	//(10, 6, -5)
-	room.push_back(Triangle{p5_up, p5_down, p3_down, YellowLamb});
+	room.push_back(Triangle{p5_up, p5_down, p3_down, GreenLamb});
 
 	//Pos x pos y 1
 	//(13, 0, 5)
 	//(13, 0, -5)
 	//(10, 6, -5)
-	room.push_back(Triangle{p6_up, p4_down, p6_down, PurpleLamb});
+	room.push_back(Triangle{p6_up, p4_down, p6_down, WhiteLamb});
 
 	//Pos x pos y 2
 	//(13, 0, 5) 
 	//(10, -6, -5)
 	//(10, -6, 5)
-	room.push_back(Triangle{p6_up, p4_up, p4_down, PurpleLamb});
+	room.push_back(Triangle{p6_up, p4_up, p4_down, WhiteLamb});
 
 	//pos x neg y 1
 	//(13, 0, 5)
@@ -273,39 +273,63 @@ void Scene::drawRoom() {
 	room.push_back(Triangle{p6_up, p5_down, p5_up, TealPerf});
 
 	//Add object Tetrhedron
-	vec3 tBotFront{5, 2, -4.5};
-	vec3 tBotRight{6, 0, -4.5};
-	vec3 tBotLeft{6 , 4, -4.5};
-	vec3 tTop{6, 2, -2};
+	vec3 tBotFront{7, 3, -4.5};
+	vec3 tBotRight{8, 1, -4.5};
+	vec3 tBotLeft{8 , 5, -4.5};
+	vec3 tTop{8, 3, -2};
 
 	// Bottom triangle
 	//(10, 2, -3)
 	//(11, 1, -3)
 	//(11, 3, -3)
-	room.push_back(Triangle{tBotFront, tBotLeft, tBotRight, TealLamb});
+	room.push_back(Triangle{tBotFront, tBotLeft, tBotRight, WhiteLamb});
 
 	//Left
 	//(10, 2, -3)
 	//(11, 2, -2)
 	//(11, 1, -3)
-	room.push_back(Triangle{tBotFront, tTop, tBotLeft, TealLamb});
+	room.push_back(Triangle{tBotFront, tTop, tBotLeft, WhiteLamb});
 	//
 	//RIGHT
 	//(10, 2, -3)
 	//(11, 3, -3)
 	//(11, 2, -2)
-	room.push_back(Triangle{tBotFront, tBotRight, tTop, TealLamb});
+	room.push_back(Triangle{tBotFront, tBotRight, tTop, WhiteLamb});
 
 
 	//BACK
 	//(11, 3, -3)
 	//(11, 1, -3)
 	//(11, 2, -2)s
-	room.push_back(Triangle{tBotRight, tBotLeft, tTop, TealLamb});
+	room.push_back(Triangle{tBotRight, tBotLeft, tTop, WhiteLamb});
 
-	
+		//Rätblock
+	vec3 rp1{9, 2, -4.5};
+	vec3 rp2{10, 1, -4.5};
+	vec3 rp3{9, 2, 1};
+	vec3 rp4{10, 1, 1};
+	vec3 rp5{10, 3, 1};
+	vec3 rp6{11, 2, 1};
+	vec3 rp7{10, 3, -4.5};
+	vec3 rp8{11, 2, -4.5};
+
+	//fram
+	room.push_back(Triangle{rp1, rp4, rp3, TealPerf});
+	room.push_back(Triangle{rp1, rp2, rp4, TealPerf});
+
+	//vänster
+	room.push_back(Triangle{rp7, rp1, rp3, TealPerf});
+	room.push_back(Triangle{rp7, rp3, rp5, TealPerf});
+
+	//höger
+	room.push_back(Triangle{rp2, rp6, rp4, TealPerf});
+	room.push_back(Triangle{rp2, rp8, rp6, TealPerf});
+
+	//top
+	room.push_back(Triangle{rp3, rp6, rp5, TealPerf});
+	room.push_back(Triangle{rp3, rp4, rp6, TealPerf});
 
 	// addSphere(Sphere{vec3{7.0f, -1.5f, 0.0f}, 1.0f, YellowPerf});
-	addSphere(Sphere{vec3{7.0f, -3.5f, -3.5f}, 2.0f, WhiteLamb});
+	addSphere(Sphere{vec3{8.0f, -3.5f, -3.5f}, 2.0f, WhiteLamb});
 	addLight();
 }
