@@ -78,7 +78,7 @@ ColorDbl Scene::calcLight(vec3& intersection, vec3& intersectionNormal) const {
 
 	for(Triangle LT : l.getLightTriangles()) {
 		area += LT.calcArea();
-		for(int i = 0; i < 3; ++i){
+		for(int i = 0; i < 1; ++i){
 
 			vec3 randLightPoint = LT.getRandomPoint() ;
 			// vec3 randLightPoint = l.getLightCenter();

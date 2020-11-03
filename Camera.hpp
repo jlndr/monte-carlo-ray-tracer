@@ -9,6 +9,7 @@
 #include "Sphere.hpp"
 #include <cstdio>
 #include "utils.hpp"
+#include "omp/omp.h"
 
 #include "glm/gtx/rotate_vector.hpp"
 #include <iostream>
@@ -99,7 +100,7 @@ ColorDbl Camera::traceRay(const Scene& s, Ray& r, int pass) {
 	//Compute indirect
 
 	// Determine number of ray from intersection point. Hemisphere samples
-	const int indirectSamples = 12;
+	const int indirectSamples = 1;
 	ColorDbl indirect{};
 	for(int i = 0; i < indirectSamples; ++i) {
 		indirect += sampleIndirectRay(s, intersection, intersectionNormal) ;
@@ -180,12 +181,15 @@ void Camera::createPixels() {
 
 void Camera::render(const Scene& s) {
 	const int SUBPIXELS = 2; //In each direction
-	const int samples = 12;
+	const int samples = 1;
 	const float subSideLength = Pixel::getSideLength() / SUBPIXELS; 
 	std::cout << "\nRENDER\n";
 	// double max = 800;
 	// int counter = 0;
-	for (int i = 0; i < HEIGHT; ++i) {
+		// Parallellize the for loop with openMP.
+	#pragma omp parallel for collapse(2) num_threads(4)
+	for (int i = 0; i < HEIGHT; ++i) 
+	{
 		for (int j = 0; j < WIDTH; ++j) {
 			ColorDbl color{0.0, 0.0, 0.0};
 			
@@ -194,7 +198,7 @@ void Camera::render(const Scene& s) {
 				for(int m = 0; m < SUBPIXELS; ++m) {
 					
 					
-					// if(i == 400) std::cout << "y: " << point.y << " " << "z: " << point.z << "\n"; 
+					// if(i == 400) std::cout << "y: " << point.y << " " << "z: " << point.z << "\n";
 					for(int n = 0; n < samples; ++n) {
 						double y = randMinMax(k * subSideLength, subSideLength + k * subSideLength);
 						double z = randMinMax(m * subSideLength, subSideLength + m * subSideLength);
@@ -212,18 +216,20 @@ void Camera::render(const Scene& s) {
 			// 			color += traceRay(s, r, 0);
 			// }
 			// ColorDbl color = traceRay(s, r, 0);
-			// std::cout << color.x << " " << color.y << " " << color.z << "\n";
+			// printf("i = %d, j= %d, threadId = %d \n", i, j, omp_get_thread_num());
 			pixels[j + i * HEIGHT].setColor(color);
 			if(color.x > maxValue) maxValue = color.x;
 			if(color.y > maxValue) maxValue = color.y;
-			if(color.z > maxValue) maxValue = color.z;	
+			if(color.z > maxValue) maxValue = color.z;
 		
 		}
 		// std::cout << "\nRENDering\n";
-			// ++counter;
+
 			// std::cout << "\r" << counter/max << "%";
 			// std::cout << "\r";
-		std::cout << "i: " << i << "\n";
+		// std::cout << "i: " << i << "\n";
+		// printf("threadId = %d \n", omp_get_thread_num());
+		// printf("i = %d, threadId = %d \n", i, omp_get_thread_num());
 	}
 	std::cout << "\n PIXELS DONE \n";
 	// std::cout << "Counter1: " << count << "\n";
