@@ -65,7 +65,7 @@ ColorDbl Camera::traceRay(const Scene& s, Ray& r, int pass) {
 	if(glm::distance(r.getStartPoint(), closestTriangle) < glm::distance(r.getStartPoint(), closestSphere)) {
 		Material m = hit.getMaterial();
 		if(m.isType(LIGHTSOURCE)) return m.getColor();
-		else if(m.isType(PERFECT_REFL)) {
+		else if(m.isType(PERFECT_REFL) || m.isType(TRANSPARENT)) {
 			if(pass == MAX_PASSES) return m.reflect();
 			vec3 newDirection = glm::reflect(r.getDirection(), glm::normalize(hit.getNormal()));
 			Ray newRay{closestTriangle, newDirection};
@@ -80,6 +80,46 @@ ColorDbl Camera::traceRay(const Scene& s, Ray& r, int pass) {
 			vec3 newDirection = glm::reflect(r.getDirection(), glm::normalize(intersectionNormalS));
 			Ray newRay{closestSphere + intersectionNormalS * EPSILON, newDirection};
 				return traceRay(s, newRay, 0);
+		}
+		else if(m.isType(TRANSPARENT)) {
+
+			if(pass == MAX_PASSES) return m.reflect();
+
+			float n1 = 1.0; //AIR
+			float n2 = 1.5; //GLASS
+			// float DIAMOND = 2.417;
+			vec3 n = intersectionNormalS;
+			double cosIn = glm::clamp(-1.0f, 1.0f, glm::dot(r.getDirection(), n));
+			
+			if (cosIn < 0) {
+				cosIn = -cosIn;
+			}
+			else {
+				std::swap(n1, n2);
+				n = -n;
+			}
+			//SCHLICS alt FRESH (TO FRKN HEAVY)
+			double R0 = pow((n1 - n2) / (n1 + n2), 2);
+			double R =  R0 + (1 - R0) * pow(1 - cosIn, 5);
+			double T = 1 - R; //Transmission
+			
+
+			float ratio = n1/n2;
+			float refractContr = 1.0 - ratio * ratio * (1.0 - cosIn * cosIn);
+
+			vec3 refractedDir = refractContr < 0.0f ? vec3{} : (float)ratio * r.getDirection() + (float)(ratio * cosIn - sqrt(refractContr)) * n;
+			Ray ref{closestSphere + EPSILON * refractedDir, refractedDir};
+			ColorDbl refractedLight = traceRay(s, ref, pass + 1);
+
+			vec3 newDirection = glm::reflect(r.getDirection(), glm::normalize(intersectionNormalS));
+			Ray newRay{closestSphere + intersectionNormalS * EPSILON, newDirection};
+			ColorDbl reflectedLight = traceRay(s, newRay, pass + 1);
+
+			return refractedLight * T + reflectedLight * R;
+			// std::cout << R << "\n";
+			// return refractedLight * T;
+			// return reflectedLight * R;
+			
 		}
 		// return sp.getMaterial().getColor();
 	}
@@ -100,17 +140,16 @@ ColorDbl Camera::traceRay(const Scene& s, Ray& r, int pass) {
 	//Compute indirect
 
 	// Determine number of ray from intersection point. Hemisphere samples
-	const int indirectSamples = 1;
+	const int indirectSamples = 6;
 	ColorDbl indirect{};
 	for(int i = 0; i < indirectSamples; ++i) {
 		indirect += sampleIndirectRay(s, intersection, intersectionNormal) ;
 	}
 	indirect *= (1.0 / (double)indirectSamples * M_PI);
 	
-	//directlight - indirect
-	// indirect = indirect, ColorDbl{}, directLight);
+	
 	ColorDbl color =  directLight + indirect * 0.1; //+ asdasd
-
+	// ColorDbl color = directLight;
 	return color; // + indirect
 }
 
@@ -181,7 +220,7 @@ void Camera::createPixels() {
 
 void Camera::render(const Scene& s) {
 	const int SUBPIXELS = 2; //In each direction
-	const int samples = 1;
+	const int samples = 3;
 	const float subSideLength = Pixel::getSideLength() / SUBPIXELS; 
 	std::cout << "\nRENDER\n";
 	// double max = 800;
@@ -212,10 +251,8 @@ void Camera::render(const Scene& s) {
 
 			// //Fast render plz
 			// Ray r{CameraPos, glm::normalize(pixels[j + i * HEIGHT].getCenterPoint() - CameraPos)};
-			// for(int n = 0; n < 12 ; ++n) {
-			// 			color += traceRay(s, r, 0);
-			// }
 			// ColorDbl color = traceRay(s, r, 0);
+
 			// printf("i = %d, j= %d, threadId = %d \n", i, j, omp_get_thread_num());
 			pixels[j + i * HEIGHT].setColor(color);
 			if(color.x > maxValue) maxValue = color.x;
@@ -244,7 +281,7 @@ void Camera::createImage() {
 	FILE *f = fopen("image.ppm", "wb"); //b = binary mode
 	fprintf(f, "P6\n %i %i 255\n", WIDTH, HEIGHT);
 	std::cout << "FIle open\n";
-	double norm = 255.0 / maxValue;
+	// double norm = 255.0 / maxValue;
 	//Normera till 255
 	for (int i = 0; i < HEIGHT; ++i) {
 		for (int j = 0; j < WIDTH; ++j) {

@@ -21,9 +21,9 @@ public:
 	Triangle checkTriangleIntersections (Ray &ray, vec3& closestTriangle, vec3& intersectionNormal) const;
 	Sphere checkSphereIntersections(Ray &ray, vec3& closestSphere, vec3& intersectionNormal) const;
 	
-	void addSphere(Sphere _s) {
-		s = _s;
-	}
+	// void addSphere(Sphere _s) {
+	// 	s = _s;
+	// }
 
 	void addLight() {
 		
@@ -39,7 +39,8 @@ public:
 	
 private:
 	std::vector<Triangle> room;
-	Sphere s;
+	std::vector<Sphere> spheres;
+	// Sphere s;
 	Light l{};
 	
 };
@@ -62,12 +63,16 @@ Triangle Scene::checkTriangleIntersections(Ray &r, vec3& closestTriangle, vec3& 
 
 Sphere Scene::checkSphereIntersections(Ray &r, vec3& closestSphere, vec3& intersectionNormal) const {
 	Sphere _s{};
-	vec3 intersection{};
-	if(s.rayIntersection(r, intersection, intersectionNormal)) {
-		_s = s;
-		closestSphere = intersection;
+	for(auto s : spheres) {
+		vec3 intersection{}, intersectionN{};
+		
+		if(!s.rayIntersection(r, intersection, intersectionN)) continue;
+		if(glm::distance(r.getStartPoint(), intersection) < glm::distance(r.getStartPoint(), closestSphere)) {
+			_s = s;
+			closestSphere = intersection;
+			intersectionNormal = intersectionN;
+		}
 	}
-	
 	return _s;
 }
 
@@ -78,7 +83,7 @@ ColorDbl Scene::calcLight(vec3& intersection, vec3& intersectionNormal) const {
 
 	for(Triangle LT : l.getLightTriangles()) {
 		area += LT.calcArea();
-		for(int i = 0; i < 1; ++i){
+		for(int i = 0; i < 3; ++i){
 
 			vec3 randLightPoint = LT.getRandomPoint() ;
 			// vec3 randLightPoint = l.getLightCenter();
@@ -112,13 +117,18 @@ bool Scene::castShadowray(vec3& intersection, vec3& intersectionNormal, vec3& ra
 	vec3 closestTriangle{1000.0f, 0.0f, 0.0f};
 	vec3 closestSphere{1000.0f, 0.0f, 0.0f};
 
-	checkTriangleIntersections(r, closestTriangle, intersectionNormal);
-	checkSphereIntersections(rBias, closestSphere, intersectionNormal);
+	Triangle t  = checkTriangleIntersections(r, closestTriangle, intersectionNormal);
+	Sphere s = checkSphereIntersections(rBias, closestSphere, intersectionNormal);
 	
 	double distToLight = glm::distance(randLightPoint, intersection);
 	double distToTriangle = glm::distance(closestTriangle, intersection);
 	double distToSphere = glm::distance(closestSphere, startPoint);
 
+	Material tM = t.getMaterial();
+	Material sM = s.getMaterial();
+
+	if(tM.isType(TRANSPARENT)) return true;
+	if(sM.isType(TRANSPARENT)) return true;
 
 	if(distToTriangle + EPSILON < distToLight ) return false;
 	if(distToSphere + EPSILON < distToLight && glm::abs(distToSphere) > EPSILON) return false;
@@ -157,6 +167,8 @@ void Scene::drawRoom() {
 	Material YellowPerf{ColorDbl{1.0f, 1.0f, 0.0f}, PERFECT_REFL};
 	Material RedPerf{ColorDbl{1.0f, 0.0f, 0.0f}, PERFECT_REFL};
 	Material TealPerf{ColorDbl{0.0f, 0.5f, 0.5f}, PERFECT_REFL};
+
+	Material WhiteTransp{ColorDbl{1.0f, 1.0f, 1.0f}, TRANSPARENT};
 	//ROOF
 	//((-3, 0, 5))
 	//(0, 6 , 5)
@@ -264,13 +276,13 @@ void Scene::drawRoom() {
 	//(13, 0, 5)
 	//(10, 6, -5)
 	//(13, 0, -5)
-	room.push_back(Triangle{p6_up, p6_down, p5_down, TealPerf});
+	room.push_back(Triangle{p6_up, p6_down, p5_down, YellowPerf});
 
 	//pos x pos y 2
 	//(13, 0, 5)
 	//(10, 6, 5)
 	//(10, 6, -5)
-	room.push_back(Triangle{p6_up, p5_down, p5_up, TealPerf});
+	room.push_back(Triangle{p6_up, p5_down, p5_up, YellowPerf});
 
 	//Add object Tetrhedron
 	vec3 tBotFront{7, 3, -4.5};
@@ -278,30 +290,30 @@ void Scene::drawRoom() {
 	vec3 tBotLeft{8 , 5, -4.5};
 	vec3 tTop{8, 3, -2};
 
-	// Bottom triangle
-	//(10, 2, -3)
-	//(11, 1, -3)
-	//(11, 3, -3)
-	room.push_back(Triangle{tBotFront, tBotLeft, tBotRight, WhiteLamb});
+	// // Bottom triangle
+	// //(10, 2, -3)
+	// //(11, 1, -3)
+	// //(11, 3, -3)
+	// room.push_back(Triangle{tBotFront, tBotLeft, tBotRight, PurpleLamb});
 
-	//Left
-	//(10, 2, -3)
-	//(11, 2, -2)
-	//(11, 1, -3)
-	room.push_back(Triangle{tBotFront, tTop, tBotLeft, WhiteLamb});
-	//
-	//RIGHT
-	//(10, 2, -3)
-	//(11, 3, -3)
-	//(11, 2, -2)
-	room.push_back(Triangle{tBotFront, tBotRight, tTop, WhiteLamb});
+	// //Left
+	// //(10, 2, -3)
+	// //(11, 2, -2)
+	// //(11, 1, -3)
+	// room.push_back(Triangle{tBotFront, tTop, tBotLeft, PurpleLamb});
+	// //
+	// //RIGHT
+	// //(10, 2, -3)
+	// //(11, 3, -3)
+	// //(11, 2, -2)
+	// room.push_back(Triangle{tBotFront, tBotRight, tTop, PurpleLamb});
 
 
-	//BACK
-	//(11, 3, -3)
-	//(11, 1, -3)
-	//(11, 2, -2)s
-	room.push_back(Triangle{tBotRight, tBotLeft, tTop, WhiteLamb});
+	// //BACK
+	// //(11, 3, -3)
+	// //(11, 1, -3)
+	// //(11, 2, -2)s
+	// room.push_back(Triangle{tBotRight, tBotLeft, tTop, PurpleLamb});
 
 		//Rätblock
 	vec3 rp1{9, 2, -4.5};
@@ -330,6 +342,9 @@ void Scene::drawRoom() {
 	room.push_back(Triangle{rp3, rp4, rp6, TealPerf});
 
 	// addSphere(Sphere{vec3{7.0f, -1.5f, 0.0f}, 1.0f, YellowPerf});
-	addSphere(Sphere{vec3{8.0f, -3.5f, -3.5f}, 2.0f, WhiteLamb});
+	spheres.push_back(Sphere{vec3{6.0f, -2.5f, -3.5f}, 1.5f, WhiteLamb});
+	spheres.push_back(Sphere{vec3{6.0f, 3.0f, -3.5f}, 1.5f, WhiteTransp});
+	spheres.push_back(Sphere{vec3{8.0f, -1.5f, -1.5f}, 1.5f, YellowPerf});
+	// addSphere(Sphere{vec3{5.0f, -1.0f, 0.0f}, 1.5f, WhiteTransp});
 	addLight();
 }

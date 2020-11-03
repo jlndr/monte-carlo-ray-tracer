@@ -29,9 +29,13 @@ ColorDbl Material::reflect() const {
 
 		case PERFECT_REFL: return perfectReflection();
 
+		case TRANSPARENT: return perfectReflection();
+
 		default: return lambertianReflection(); 
 	}
 }
+
+
 
 ColorDbl Material::lambertianReflection() const {
 	return colorDbl * 0.8 / M_PI;

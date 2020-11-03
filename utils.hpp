@@ -6,6 +6,7 @@ const float EPSILON = 0.0001;
 const int LAMBERTIAN = 0;
 const int PERFECT_REFL = 1;
 const int LIGHTSOURCE = 2;
+const int TRANSPARENT = 3;
 
 
 static std::default_random_engine GENERATOR;
