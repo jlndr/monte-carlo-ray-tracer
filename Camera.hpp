@@ -86,8 +86,8 @@ ColorDbl Camera::traceRay(const Scene& s, Ray& r, int pass) {
 			if(pass == MAX_PASSES) return m.reflect();
 
 			float n1 = 1.0; //AIR
-			float n2 = 1.5; //GLASS
-			// float DIAMOND = 2.417;
+			float n2 = 1.5; //GLASSs
+			// float n2 = 2.417; //DIAMOND
 			vec3 n = intersectionNormalS;
 			double cosIn = glm::clamp(-1.0f, 1.0f, glm::dot(r.getDirection(), n));
 			
@@ -140,7 +140,7 @@ ColorDbl Camera::traceRay(const Scene& s, Ray& r, int pass) {
 	//Compute indirect
 
 	// Determine number of ray from intersection point. Hemisphere samples
-	const int indirectSamples = 6;
+	const int indirectSamples = 24;
 	ColorDbl indirect{};
 	for(int i = 0; i < indirectSamples; ++i) {
 		indirect += sampleIndirectRay(s, intersection, intersectionNormal) ;
@@ -181,6 +181,7 @@ ColorDbl Camera::sampleIndirectRay(const Scene& s, const vec3& point, const vec3
 	));
 
 	Ray reflectedRay{point, randDir};
+	Ray reflectedRayBias{point + EPSILON * randDir, randDir};
 	//Check intersections
 	//color from intersection :)
 	vec3 closestTriangle{1000.0, 0.0, 0.0};
@@ -189,15 +190,22 @@ ColorDbl Camera::sampleIndirectRay(const Scene& s, const vec3& point, const vec3
 	vec3 intersectionNormalT{};
 	vec3 intersectionNormalS{};
 	Triangle hit = s.checkTriangleIntersections(reflectedRay, closestTriangle, intersectionNormalT);
-	Sphere sp = s.checkSphereIntersections(reflectedRay, closestSphere, intersectionNormalS);
+	Sphere sp = s.checkSphereIntersections(reflectedRayBias, closestSphere, intersectionNormalS);
 
 	Material m = glm::distance(closestSphere, reflectedRay.getStartPoint()) < glm::distance(closestTriangle, reflectedRay.getStartPoint())  ? sp.getMaterial() : hit.getMaterial();
+	vec3 p =	glm::distance(closestSphere, reflectedRay.getStartPoint()) < glm::distance(closestTriangle, reflectedRay.getStartPoint()) ? closestSphere : closestTriangle;
+	vec3 in = glm::distance(closestSphere, reflectedRay.getStartPoint()) < glm::distance(closestTriangle, reflectedRay.getStartPoint()) ? intersectionNormalS : intersectionNormalT;
+
+	double cosAlpha = glm::dot(in, -normal);
+
+	// cosAlpha = cosAlpha < 0.01 ? 0.0 : 1.0;
 
 	if(m.isType(LIGHTSOURCE)) return m.getColor();
-	else if(m.isType(PERFECT_REFL)) return color;
+	else if(m.isType(PERFECT_REFL) || m.isType(TRANSPARENT)) return color;
 
-	color = m.reflect();
-	// color += traceRay(s, reflectedRay, ++pass);
+
+	color = m.reflect() * cosAlpha;
+	// color = m.reflect();	// color += traceRay(s, reflectedRay, ++pass);
 	// color += traceRay(s, reflectedRay, ++pass) * (1.0 / (pass + 1)); // + 1 is to avoid dividing with zero which is illegal
 
 	return color;
@@ -220,7 +228,7 @@ void Camera::createPixels() {
 
 void Camera::render(const Scene& s) {
 	const int SUBPIXELS = 2; //In each direction
-	const int samples = 3;
+	const int samples = 30;
 	const float subSideLength = Pixel::getSideLength() / SUBPIXELS; 
 	std::cout << "\nRENDER\n";
 	// double max = 800;

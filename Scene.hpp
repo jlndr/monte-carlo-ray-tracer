@@ -36,6 +36,7 @@ public:
 
 	ColorDbl calcLight(vec3& intersection, vec3& intersectionNormal) const;
 	bool castShadowray(vec3& intersection, vec3& intersectionNormal, vec3& randLightPoint) const;
+	bool caustic(vec3& p, vec3& in, Ray& r, int pass = 0) const;
 	
 private:
 	std::vector<Triangle> room;
@@ -92,14 +93,14 @@ ColorDbl Scene::calcLight(vec3& intersection, vec3& intersectionNormal) const {
 			++counter;
 			if(!castShadowray(it, iN, randLightPoint)) continue;
 			
-			double cosAlpha = glm::dot(intersectionNormal, glm::normalize(randLightPoint - intersection)); 
+			double cosAlpha = glm::dot(intersectionNormal, glm::normalize(randLightPoint - intersection));
 			double cosBeta = glm::dot(LT.getNormal(), glm::normalize(intersection - randLightPoint));
 			// double angle = glm::dot(glm::normalize(intersectionNormal), glm::normalize(randLightPoint - intersection)) ;
 			// double beta = glm::clamp((double) glm::dot(LT.getNormal(), glm::normalize(intersection - randLightPoint)), 0.0, 1.0);
 			if(cosAlpha < 0) cosAlpha = 0;
 			if(cosBeta < 0) cosBeta = 0;
 			double geo = cosBeta * cosAlpha/ glm::pow(glm::distance(intersection, randLightPoint), 2.0);
-			color += l.getColor() * geo * 25.0;
+			color += l.getColor() * geo * 50.0;
 		}
 	}
 	// return color;
@@ -116,25 +117,85 @@ bool Scene::castShadowray(vec3& intersection, vec3& intersectionNormal, vec3& ra
 	
 	vec3 closestTriangle{1000.0f, 0.0f, 0.0f};
 	vec3 closestSphere{1000.0f, 0.0f, 0.0f};
+	vec3 iNT{};
+	vec3 iNS{};
 
-	Triangle t  = checkTriangleIntersections(r, closestTriangle, intersectionNormal);
-	Sphere s = checkSphereIntersections(rBias, closestSphere, intersectionNormal);
+	Triangle t  = checkTriangleIntersections(r, closestTriangle, iNT);
+	Sphere s = checkSphereIntersections(rBias, closestSphere, iNS);
 	
 	double distToLight = glm::distance(randLightPoint, intersection);
 	double distToTriangle = glm::distance(closestTriangle, intersection);
 	double distToSphere = glm::distance(closestSphere, startPoint);
 
-	Material tM = t.getMaterial();
-	Material sM = s.getMaterial();
+	Material M = distToSphere < distToTriangle ? s.getMaterial() : t.getMaterial();
+	vec3 point = distToSphere < distToTriangle ? closestSphere : closestTriangle;
+	vec3 in = distToSphere < distToTriangle ? iNS : iNT;
 
-	if(tM.isType(TRANSPARENT)) return true;
-	if(sM.isType(TRANSPARENT)) return true;
+	// if(M.isType(TRANSPARENT)) {
+	// 	return caustic(point, in, r);
+	// }
+
 
 	if(distToTriangle + EPSILON < distToLight ) return false;
 	if(distToSphere + EPSILON < distToLight && glm::abs(distToSphere) > EPSILON) return false;
 	return true;
-	
 }
+
+bool Scene::caustic(vec3& p, vec3& in, Ray& r, int pass) const {
+	if(pass == 6) return false;
+	float n1 = 1.0; //AIR
+	// float n2 = 1.5; //GLASS
+	float n2 = 1.5; //DIAMOND
+
+	double cosIn = glm::clamp(-1.0f, 1.0f, glm::dot(r.getDirection(), in));
+	
+	if (cosIn < 0) {
+		cosIn = -cosIn;
+	}
+	else {
+		std::swap(n1, n2);
+		in = -in;
+	}
+	//SCHLICS alt FRESH (TO FRKN HEAVY)
+	double R0 = pow((n1 - n2) / (n1 + n2), 2);
+	double R =  R0 + (1 - R0) * pow(1 - cosIn, 5);
+	double T = 1 - R; //Transmission
+	
+
+	float ratio = n1/n2;
+	float refractContr = 1.0 - ratio * ratio * (1.0 - cosIn * cosIn);
+
+	vec3 refractedDir = refractContr < 0.0f ? vec3{} : (float)ratio * r.getDirection() + (float)(ratio * cosIn - sqrt(refractContr)) * in;
+	Ray ref{p + EPSILON * refractedDir, refractedDir};
+
+
+	vec3 closestTriangle{1000.0f, 0.0f, 0.0f};
+	vec3 closestSphere{1000.0f, 0.0f, 0.0f};
+	vec3 iNT{};
+	vec3 iNS{};
+	Triangle refHitT = checkTriangleIntersections(ref, closestTriangle, iNT);
+	Sphere refHitS = checkSphereIntersections(ref, closestSphere, iNS);
+
+	double distToTriangle = glm::distance(closestTriangle, p);
+	double distToSphere = glm::distance(closestSphere, p);
+
+	Material M = distToSphere < distToTriangle ? refHitS.getMaterial() : refHitT.getMaterial();
+	vec3 point = distToSphere < distToTriangle ? closestSphere : closestTriangle;
+	vec3 intersection = distToSphere < distToTriangle ? iNS : iNT;
+
+	if(M.isType(TRANSPARENT)) {
+		return caustic(point, intersection, ref, pass + 1);
+	}
+	if(M.isType(LIGHTSOURCE)) return true;
+
+	// vec3 newDirection = glm::reflect(r.getDirection(), glm::normalize(intersectionNormalS));
+	// Ray newRay{closestSphere + intersectionNormalS * EPSILON, newDirection};
+	// ColorDbl reflectedLight = traceRay(s, newRay, pass + 1);
+
+	return false;
+
+}
+
 
 void Scene::drawRoom() {
 
@@ -169,6 +230,7 @@ void Scene::drawRoom() {
 	Material TealPerf{ColorDbl{0.0f, 0.5f, 0.5f}, PERFECT_REFL};
 
 	Material WhiteTransp{ColorDbl{1.0f, 1.0f, 1.0f}, TRANSPARENT};
+	Material RedTransp{ColorDbl{1.0f, 0.0f, 0.0f}, TRANSPARENT};
 	//ROOF
 	//((-3, 0, 5))
 	//(0, 6 , 5)
@@ -230,13 +292,13 @@ void Scene::drawRoom() {
 	//(-3, 0, 5)
 	//(-3, 0, -5)
 	//(0, 6, -5)
-	room.push_back(Triangle{p1_up, p3_down, p1_down, WhiteLamb});
+	room.push_back(Triangle{p1_up, p3_down, p1_down, GreenLamb});
 
 	//Negativ x NEG y 2
 	//(-3, 0, 5)
 	//(0, 6, -5)
 	//(0, 6, 5)
-	room.push_back(Triangle{p1_up, p3_up, p3_down, WhiteLamb});
+	room.push_back(Triangle{p1_up, p3_up, p3_down, GreenLamb});
 
 	//Långsida POS Y
 	//(10, 6, 5)
@@ -285,66 +347,67 @@ void Scene::drawRoom() {
 	room.push_back(Triangle{p6_up, p5_down, p5_up, YellowPerf});
 
 	//Add object Tetrhedron
-	vec3 tBotFront{7, 3, -4.5};
-	vec3 tBotRight{8, 1, -4.5};
-	vec3 tBotLeft{8 , 5, -4.5};
-	vec3 tTop{8, 3, -2};
+	vec3 tBotFront{7, -3, 0};
+	vec3 tBotRight{8, -5, 0};
+	vec3 tBotLeft{8 , -1, 0};
+	vec3 tTop{8, -3, 2.5};
 
-	// // Bottom triangle
-	// //(10, 2, -3)
-	// //(11, 1, -3)
-	// //(11, 3, -3)
-	// room.push_back(Triangle{tBotFront, tBotLeft, tBotRight, PurpleLamb});
+	// Bottom triangle
+	//(10, 2, -3)
+	//(11, 1, -3)
+	//(11, 3, -3)
+	room.push_back(Triangle{tBotFront, tBotLeft, tBotRight, GrayLamb});
 
-	// //Left
-	// //(10, 2, -3)
-	// //(11, 2, -2)
-	// //(11, 1, -3)
-	// room.push_back(Triangle{tBotFront, tTop, tBotLeft, PurpleLamb});
-	// //
-	// //RIGHT
-	// //(10, 2, -3)
-	// //(11, 3, -3)
-	// //(11, 2, -2)
-	// room.push_back(Triangle{tBotFront, tBotRight, tTop, PurpleLamb});
+	//Left
+	//(10, 2, -3)
+	//(11, 2, -2)
+	//(11, 1, -3)
+	room.push_back(Triangle{tBotFront, tTop, tBotLeft, GrayLamb});
+	//
+	//RIGHT
+	//(10, 2, -3)
+	//(11, 3, -3)
+	//(11, 2, -2)
+	room.push_back(Triangle{tBotFront, tBotRight, tTop, GrayLamb});
 
 
-	// //BACK
-	// //(11, 3, -3)
-	// //(11, 1, -3)
-	// //(11, 2, -2)s
-	// room.push_back(Triangle{tBotRight, tBotLeft, tTop, PurpleLamb});
+	//BACK
+	//(11, 3, -3)
+	//(11, 1, -3)
+	//(11, 2, -2)s
+	room.push_back(Triangle{tBotRight, tBotLeft, tTop, GrayLamb});
 
 		//Rätblock
-	vec3 rp1{9, 2, -4.5};
-	vec3 rp2{10, 1, -4.5};
-	vec3 rp3{9, 2, 1};
-	vec3 rp4{10, 1, 1};
-	vec3 rp5{10, 3, 1};
-	vec3 rp6{11, 2, 1};
-	vec3 rp7{10, 3, -4.5};
-	vec3 rp8{11, 2, -4.5};
+	// vec3 rp1{9, 2, -4.5};
+	// vec3 rp2{10, 1, -4.5};
+	// vec3 rp3{9, 2, 1};
+	// vec3 rp4{10, 1, 1};
+	// vec3 rp5{10, 3, 1};
+	// vec3 rp6{11, 2, 1};
+	// vec3 rp7{10, 3, -4.5};
+	// vec3 rp8{11, 2, -4.5};
 
-	//fram
-	room.push_back(Triangle{rp1, rp4, rp3, TealPerf});
-	room.push_back(Triangle{rp1, rp2, rp4, TealPerf});
+	// //fram
+	// room.push_back(Triangle{rp1, rp4, rp3, TealPerf});
+	// room.push_back(Triangle{rp1, rp2, rp4, TealPerf});
 
-	//vänster
-	room.push_back(Triangle{rp7, rp1, rp3, TealPerf});
-	room.push_back(Triangle{rp7, rp3, rp5, TealPerf});
+	// //vänster
+	// room.push_back(Triangle{rp7, rp1, rp3, TealPerf});
+	// room.push_back(Triangle{rp7, rp3, rp5, TealPerf});
 
-	//höger
-	room.push_back(Triangle{rp2, rp6, rp4, TealPerf});
-	room.push_back(Triangle{rp2, rp8, rp6, TealPerf});
+	// //höger
+	// room.push_back(Triangle{rp2, rp6, rp4, TealPerf});
+	// room.push_back(Triangle{rp2, rp8, rp6, TealPerf});
 
-	//top
-	room.push_back(Triangle{rp3, rp6, rp5, TealPerf});
-	room.push_back(Triangle{rp3, rp4, rp6, TealPerf});
+	// //top
+	// room.push_back(Triangle{rp3, rp6, rp5, TealPerf});
+	// room.push_back(Triangle{rp3, rp4, rp6, TealPerf});
 
 	// addSphere(Sphere{vec3{7.0f, -1.5f, 0.0f}, 1.0f, YellowPerf});
-	spheres.push_back(Sphere{vec3{6.0f, -2.5f, -3.5f}, 1.5f, WhiteLamb});
-	spheres.push_back(Sphere{vec3{6.0f, 3.0f, -3.5f}, 1.5f, WhiteTransp});
-	spheres.push_back(Sphere{vec3{8.0f, -1.5f, -1.5f}, 1.5f, YellowPerf});
+	spheres.push_back(Sphere{vec3{6.0f, -2.5f, -2.5f}, 1.5f, WhiteLamb});
+	spheres.push_back(Sphere{vec3{6.0f, 3.0f, -2.5f}, 1.5f, RedTransp});
+	// spheres.push_back(Sphere{vec3{7.0f, 3.0f, 2.0f}, 1.5f, RedTransp});
+	spheres.push_back(Sphere{vec3{9.0f, 3.0f, 3.0f}, 1.5f, YellowPerf});
 	// addSphere(Sphere{vec3{5.0f, -1.0f, 0.0f}, 1.5f, WhiteTransp});
 	addLight();
 }
