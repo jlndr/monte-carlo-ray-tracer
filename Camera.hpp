@@ -19,8 +19,7 @@
 const int WIDTH = 800;
 const int HEIGHT = 800;
 const int MAX_PASSES = 5;
-int count = 0;
-int count2 = 0;
+
 class Camera {
 public:
 	Camera(){
@@ -87,7 +86,7 @@ ColorDbl Camera::traceRay(const Scene& s, Ray& r, int pass) {
 
 			float n1 = 1.0; //AIR
 			float n2 = 1.5; //GLASSs
-			// float n2 = 2.417; //DIAMOND
+			// float n2 = 1.745; 
 			vec3 n = intersectionNormalS;
 			double cosIn = glm::clamp(-1.0f, 1.0f, glm::dot(r.getDirection(), n));
 			
@@ -98,7 +97,7 @@ ColorDbl Camera::traceRay(const Scene& s, Ray& r, int pass) {
 				std::swap(n1, n2);
 				n = -n;
 			}
-			//SCHLICS alt FRESH (TO FRKN HEAVY)
+			//SCHLICS alt FRESH
 			double R0 = pow((n1 - n2) / (n1 + n2), 2);
 			double R =  R0 + (1 - R0) * pow(1 - cosIn, 5);
 			double T = 1 - R; //Transmission
@@ -132,7 +131,9 @@ ColorDbl Camera::traceRay(const Scene& s, Ray& r, int pass) {
 	Material m = glm::distance(closestSphere, r.getStartPoint()) < glm::distance(closestTriangle, r.getStartPoint())  ? sp.getMaterial() : hit.getMaterial();
 	directLight = m.reflect();
 
-	ColorDbl light = s.calcLight(intersection, intersectionNormal);
+
+
+	ColorDbl light = s.calcLight(intersection, intersectionNormal, -r.getDirection(), m.getType());
 
 	directLight *= light;
 	//Direct light done
@@ -140,15 +141,21 @@ ColorDbl Camera::traceRay(const Scene& s, Ray& r, int pass) {
 	//Compute indirect
 
 	// Determine number of ray from intersection point. Hemisphere samples
-	const int indirectSamples = 24;
+	// const int indirectSamples = 3;
 	ColorDbl indirect{};
-	for(int i = 0; i < indirectSamples; ++i) {
-		indirect += sampleIndirectRay(s, intersection, intersectionNormal) ;
-	}
-	indirect *= (1.0 / (double)indirectSamples * M_PI);
+
+	int counter = 0;
+
+	do {
+		indirect += sampleIndirectRay(s, intersection, intersectionNormal);
+		++counter;
+	} while (uniformRand() < 0.8 && counter < 20);
+	// for(int i = 0; i < indirectSamples; ++i) {
+	// }
+	indirect *= (1.0 / (double)counter * M_PI);
 	
 	
-	ColorDbl color =  directLight + indirect * 0.1; //+ asdasd
+	ColorDbl color =  directLight + indirect * 0.0375; //+ asdasd
 	// ColorDbl color = directLight;
 	return color; // + indirect
 }
@@ -204,8 +211,8 @@ ColorDbl Camera::sampleIndirectRay(const Scene& s, const vec3& point, const vec3
 	else if(m.isType(PERFECT_REFL) || m.isType(TRANSPARENT)) return color;
 
 
-	color = m.reflect() * cosAlpha;
-	// color = m.reflect();	// color += traceRay(s, reflectedRay, ++pass);
+	// color = m.reflect() * cosAlpha;
+	color = m.reflect();	// color += traceRay(s, reflectedRay, ++pass);
 	// color += traceRay(s, reflectedRay, ++pass) * (1.0 / (pass + 1)); // + 1 is to avoid dividing with zero which is illegal
 
 	return color;
@@ -228,7 +235,7 @@ void Camera::createPixels() {
 
 void Camera::render(const Scene& s) {
 	const int SUBPIXELS = 2; //In each direction
-	const int samples = 30;
+	const int samples = 400;
 	const float subSideLength = Pixel::getSideLength() / SUBPIXELS; 
 	std::cout << "\nRENDER\n";
 	// double max = 800;
@@ -276,7 +283,7 @@ void Camera::render(const Scene& s) {
 		// printf("threadId = %d \n", omp_get_thread_num());
 		// printf("i = %d, threadId = %d \n", i, omp_get_thread_num());
 	}
-	std::cout << "\n PIXELS DONE \n";
+	std::cout << "\nPIXELS DONE \n";
 	// std::cout << "Counter1: " << count << "\n";
 	// std::cout << "Counter2: " << count2 << "\n";
 
@@ -288,7 +295,7 @@ void Camera::createImage() {
 	//Open file
 	FILE *f = fopen("image.ppm", "wb"); //b = binary mode
 	fprintf(f, "P6\n %i %i 255\n", WIDTH, HEIGHT);
-	std::cout << "FIle open\n";
+	std::cout << "\nFile open\n";
 	// double norm = 255.0 / maxValue;
 	//Normera till 255
 	for (int i = 0; i < HEIGHT; ++i) {
@@ -301,5 +308,5 @@ void Camera::createImage() {
 		}
 	}
 	fclose(f);
-	std::cout << "FIle closed\n";
+	std::cout << "File closed\n\n";
 }

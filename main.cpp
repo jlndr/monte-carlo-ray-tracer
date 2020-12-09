@@ -10,7 +10,6 @@ int main() {
 	Scene s{};
 	s.drawRoom();
 	
-
 	Camera c{};
 	std::cout << "****START****" << '\n';
 	auto start = std::chrono::system_clock::now();
@@ -26,4 +25,5 @@ int main() {
 	return 0;
 }
 //TIME (ms?)
-//869464835
+//highest: 869464835
+//higherster 100 spp, 9 indirect : 1437128716

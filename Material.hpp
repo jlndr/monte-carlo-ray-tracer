@@ -27,6 +27,8 @@ ColorDbl Material::reflect() const {
 	switch(type) {
 		case LAMBERTIAN: return lambertianReflection();
 
+		case OREN_NAYAR: return lambertianReflection();
+
 		case PERFECT_REFL: return perfectReflection();
 
 		case TRANSPARENT: return perfectReflection();

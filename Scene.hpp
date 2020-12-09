@@ -34,7 +34,7 @@ public:
 		}
 	}
 
-	ColorDbl calcLight(vec3& intersection, vec3& intersectionNormal) const;
+	ColorDbl calcLight(vec3& intersection, vec3& intersectionNormal, const vec3& dirToEye, const int& materialType) const;
 	bool castShadowray(vec3& intersection, vec3& intersectionNormal, vec3& randLightPoint) const;
 	bool caustic(vec3& p, vec3& in, Ray& r, int pass = 0) const;
 	
@@ -77,7 +77,7 @@ Sphere Scene::checkSphereIntersections(Ray &r, vec3& closestSphere, vec3& inters
 	return _s;
 }
 
-ColorDbl Scene::calcLight(vec3& intersection, vec3& intersectionNormal) const {
+ColorDbl Scene::calcLight(vec3& intersection, vec3& intersectionNormal, const vec3& dirToEye, const int& materialType) const {
 	ColorDbl color = ColorDbl{0.0, 0.0, 0.0};
 	double area = 0;
 	int counter = 0;
@@ -93,13 +93,37 @@ ColorDbl Scene::calcLight(vec3& intersection, vec3& intersectionNormal) const {
 			++counter;
 			if(!castShadowray(it, iN, randLightPoint)) continue;
 			
-			double cosAlpha = glm::dot(intersectionNormal, glm::normalize(randLightPoint - intersection));
+			vec3 dirToLight = glm::normalize(randLightPoint - intersection);
+
+			double cosAlpha = glm::dot(intersectionNormal, dirToLight);//Lambertian factor
 			double cosBeta = glm::dot(LT.getNormal(), glm::normalize(intersection - randLightPoint));
 			// double angle = glm::dot(glm::normalize(intersectionNormal), glm::normalize(randLightPoint - intersection)) ;
 			// double beta = glm::clamp((double) glm::dot(LT.getNormal(), glm::normalize(intersection - randLightPoint)), 0.0, 1.0);
 			if(cosAlpha < 0) cosAlpha = 0;
 			if(cosBeta < 0) cosBeta = 0;
-			double geo = cosBeta * cosAlpha/ glm::pow(glm::distance(intersection, randLightPoint), 2.0);
+			
+			if(materialType == OREN_NAYAR) {
+				double sigma = 1.5; //roughness factor
+				double sigma_square = sigma * sigma; 
+
+				double A = 1 - 0.5 * (sigma_square/ (sigma_square + 0.33));
+				double B = 0.45 * (sigma_square / (sigma_square + 0.09));
+
+				double thetaLight = glm::acos(glm::dot(dirToLight, intersectionNormal));
+				double thetaEye = glm::acos(glm::dot(dirToEye, intersectionNormal));
+				double cosEyeLight = glm::dot(dirToLight, dirToEye); 
+
+				double alpha = glm::max(thetaLight, thetaEye);
+				double beta = glm::min(thetaLight, thetaEye);
+
+				double OrenFactor = A + (B * glm::max(0.0, cosEyeLight) * sin(alpha) * tan(beta));
+				
+				cosAlpha *= OrenFactor; // If sigma = 0, Oren Factor = 1
+				
+				
+			} 
+			double geo = cosBeta * cosAlpha / glm::pow(glm::distance(intersection, randLightPoint), 2.0);
+
 			color += l.getColor() * geo * 50.0;
 		}
 	}
@@ -131,6 +155,7 @@ bool Scene::castShadowray(vec3& intersection, vec3& intersectionNormal, vec3& ra
 	vec3 point = distToSphere < distToTriangle ? closestSphere : closestTriangle;
 	vec3 in = distToSphere < distToTriangle ? iNS : iNT;
 
+	//Simulate ultra basic caustic - shadowrays can travel through transparent objectss
 	// if(M.isType(TRANSPARENT)) {
 	// 	return caustic(point, in, r);
 	// }
@@ -144,8 +169,7 @@ bool Scene::castShadowray(vec3& intersection, vec3& intersectionNormal, vec3& ra
 bool Scene::caustic(vec3& p, vec3& in, Ray& r, int pass) const {
 	if(pass == 6) return false;
 	float n1 = 1.0; //AIR
-	// float n2 = 1.5; //GLASS
-	float n2 = 1.5; //DIAMOND
+	float n2 = 1.5; //GLASS
 
 	double cosIn = glm::clamp(-1.0f, 1.0f, glm::dot(r.getDirection(), in));
 	
@@ -156,7 +180,7 @@ bool Scene::caustic(vec3& p, vec3& in, Ray& r, int pass) const {
 		std::swap(n1, n2);
 		in = -in;
 	}
-	//SCHLICS alt FRESH (TO FRKN HEAVY)
+	//SCHLICS
 	double R0 = pow((n1 - n2) / (n1 + n2), 2);
 	double R =  R0 + (1 - R0) * pow(1 - cosIn, 5);
 	double T = 1 - R; //Transmission
@@ -187,10 +211,6 @@ bool Scene::caustic(vec3& p, vec3& in, Ray& r, int pass) const {
 		return caustic(point, intersection, ref, pass + 1);
 	}
 	if(M.isType(LIGHTSOURCE)) return true;
-
-	// vec3 newDirection = glm::reflect(r.getDirection(), glm::normalize(intersectionNormalS));
-	// Ray newRay{closestSphere + intersectionNormalS * EPSILON, newDirection};
-	// ColorDbl reflectedLight = traceRay(s, newRay, pass + 1);
 
 	return false;
 
@@ -231,6 +251,8 @@ void Scene::drawRoom() {
 
 	Material WhiteTransp{ColorDbl{1.0f, 1.0f, 1.0f}, TRANSPARENT};
 	Material RedTransp{ColorDbl{1.0f, 0.0f, 0.0f}, TRANSPARENT};
+
+	Material GrayOren{ColorDbl{0.7f, 0.7f, 0.7f}, OREN_NAYAR};
 	//ROOF
 	//((-3, 0, 5))
 	//(0, 6 , 5)
@@ -356,26 +378,26 @@ void Scene::drawRoom() {
 	//(10, 2, -3)
 	//(11, 1, -3)
 	//(11, 3, -3)
-	room.push_back(Triangle{tBotFront, tBotLeft, tBotRight, GrayLamb});
+	room.push_back(Triangle{tBotFront, tBotLeft, tBotRight, GrayOren});
 
 	//Left
 	//(10, 2, -3)
 	//(11, 2, -2)
 	//(11, 1, -3)
-	room.push_back(Triangle{tBotFront, tTop, tBotLeft, GrayLamb});
+	room.push_back(Triangle{tBotFront, tTop, tBotLeft, GrayOren});
 	//
 	//RIGHT
 	//(10, 2, -3)
 	//(11, 3, -3)
 	//(11, 2, -2)
-	room.push_back(Triangle{tBotFront, tBotRight, tTop, GrayLamb});
+	room.push_back(Triangle{tBotFront, tBotRight, tTop, GrayOren});
 
 
 	//BACK
 	//(11, 3, -3)
 	//(11, 1, -3)
 	//(11, 2, -2)s
-	room.push_back(Triangle{tBotRight, tBotLeft, tTop, GrayLamb});
+	room.push_back(Triangle{tBotRight, tBotLeft, tTop, GrayOren});
 
 		//Rätblock
 	// vec3 rp1{9, 2, -4.5};
