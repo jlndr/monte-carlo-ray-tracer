@@ -1,4 +1,7 @@
 .vscode
 
+bin/*
+!bin/.keep
+
 *.ppm
 *.exe
